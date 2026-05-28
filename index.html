@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readyness – Prototype v3</title>
+<style>
+:root{
+  --bg:#f7f8fc;--surface:#fff;--text:#101828;--muted:#667085;--line:#e7eaf2;
+  --blue:#4f46e5;--blue2:#2563eb;--green:#169b62;--amber:#d9822b;--red:#d92d20;
+  --shadow:0 18px 52px rgba(16,24,40,.07);--radius:22px;
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ring-color:#d92d20;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:var(--font);font-size:14px;color:var(--text);background:radial-gradient(circle at 6% 0%,rgba(79,70,229,.1),transparent 30rem),linear-gradient(#fff,#f7f8fc 82%)}
+button,input,textarea,select{font:inherit}button{border:0;cursor:pointer}
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:24px 18px;border-right:1px solid var(--line);background:rgba(255,255,255,.78);backdrop-filter:blur(18px);display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:850;font-size:24px;letter-spacing:-.04em}
+.mark{width:38px;height:38px;border-radius:14px;background:linear-gradient(135deg,#a7d1ff,#5b4bff);display:grid;place-items:center;color:white;font-weight:900;font-size:22px;box-shadow:0 14px 28px rgba(79,70,229,.22)}
+.primary{padding:12px 15px;border-radius:14px;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue2));font-weight:760;box-shadow:0 16px 28px rgba(79,70,229,.19)}
+.secondary{border:1px solid var(--line);background:white;color:#344054;padding:10px 13px;border-radius:13px;font-weight:720}
+.link-btn{background:transparent;color:var(--blue);font-weight:760;padding:0}
+.nav{display:grid;gap:5px}
+.nav button,.request-item{width:100%;display:flex;align-items:center;gap:10px;background:transparent;color:#344054;text-align:left;padding:10px 12px;border-radius:13px;font-weight:680}
+.nav button.active,.request-item.active{background:rgba(79,70,229,.09);color:#4338ca}
+.ico{width:18px;text-align:center;color:#667085}.label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#98a2b3;font-weight:850;margin:4px 0}
+.requests{display:grid;gap:5px;max-height:38vh;overflow:auto;padding-right:2px}.request-item{display:block}.request-title{display:flex;gap:8px;align-items:center;justify-content:space-between}.request-title span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.request-meta{font-size:12px;color:#667085;margin-top:3px}
+.spacer{flex:1}.user-card{border:1px solid var(--line);border-radius:17px;background:white;padding:12px;display:flex;gap:10px;align-items:center}
+.avatar{width:32px;height:32px;border-radius:999px;background:#0f172a;color:white;display:grid;place-items:center;font-size:12px;font-weight:850;flex:0 0 auto}.small{font-size:12px;color:var(--muted);line-height:1.35}
+main{padding:30px;min-width:0}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.topbar-left{color:#475467;font-weight:720}.top-actions{display:flex;gap:9px;align-items:center}
+.layout{display:grid;grid-template-columns:minmax(0,1fr)320px;gap:20px;align-items:start}.content{display:grid;gap:16px;min-width:0}
+.panel{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.hero{padding:26px}.request-id{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:white;border-radius:10px;padding:6px 9px;color:#475467;font-size:12px;font-weight:800}
+h1{font-size:36px;line-height:1.05;letter-spacing:-.055em;margin:12px 0 8px}.subtitle{color:var(--muted);line-height:1.55;margin:0;max-width:780px}
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px}.meta-card{border-top:1px solid var(--line);padding-top:14px}.meta-card label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin-bottom:5px}.meta-card strong{font-size:14px}
+.ready{display:grid;grid-template-columns:142px minmax(0,1fr)270px;gap:24px;align-items:center;padding:24px;border-radius:var(--radius);background:radial-gradient(circle at 18% 40%,rgba(79,70,229,.10),transparent 15rem),rgba(255,255,255,.92);border:1px solid var(--line);box-shadow:var(--shadow)}
+.ring{width:118px;height:118px;border-radius:999px;background:conic-gradient(var(--ring-color) var(--score),#e9ecf7 0);display:grid;place-items:center;position:relative;transition:background .8s ease}.ring.rainbow{background:conic-gradient(from 210deg,#ff3b30,#ff9500,#ffcc00,#34c759,#00c7be,#007aff,#5856d6,#ff2d55,#ff3b30)}
+.ring:after{content:"";position:absolute;width:88px;height:88px;border-radius:999px;background:white}.ring-inner{position:relative;z-index:1;text-align:center}.ring-inner b{display:block;font-size:27px;letter-spacing:-.05em}.ring-inner span{font-size:11px;color:var(--muted);font-weight:800}
+.ready h2{font-size:25px;letter-spacing:-.04em;color:var(--blue);margin:0 0 7px}.ready p{margin:0;color:var(--muted);line-height:1.52}.next{border-left:1px solid var(--line);padding-left:22px}.next label{display:block;color:var(--muted);font-size:12px;font-weight:760;margin-bottom:6px}.next strong{display:block;font-size:14px;line-height:1.38;margin-bottom:13px}
+.section{padding:20px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px}.section-head h2{font-size:18px;letter-spacing:-.03em;margin:0}.count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:99px;background:rgba(79,70,229,.10);color:var(--blue);font-size:12px;font-weight:850}.hint{font-size:13px;color:var(--muted);margin:0 0 14px;line-height:1.45}
+.table{border:1px solid var(--line);border-radius:17px;overflow:hidden;background:white}
+.row{display:grid;grid-template-columns:minmax(260px,1.2fr)120px minmax(160px,.8fr)120px 28px;align-items:center;gap:12px;min-height:66px;padding:0 14px;border-bottom:1px solid var(--line);transition:.18s ease}
+.row:last-child{border-bottom:0}.row.header{min-height:42px;background:#fbfcff;color:#667085;font-size:12px;font-weight:850}.row.click{cursor:pointer}.row.click:hover{background:#fbfcff}
+.row.is-done{
+  opacity:.46;
+  background:#fafbff;
+}
+.row.is-done:hover{
+  opacity:.72;
+}
+.row.is-done .name,
+.row.is-done .person,
+.row.is-done .small{
+  color:#98a2b3;
+}
+.decision.is-done{
+  opacity:.46;
+  background:#fafbff;
+}
+.decision.is-done:hover{
+  opacity:.72;
+}
+.decision.is-done h3,
+.decision.is-done p,
+.decision.is-done .person,
+.decision.is-done .small{
+  color:#98a2b3;
+}
+.decision.is-done .num{
+  background:linear-gradient(135deg,#17b26a,#12a061);
+  color:#fff;
+}
+.name{font-weight:780}.name .small{display:block;margin-top:3px}
+.fancy-check{width:30px;height:30px;border-radius:12px;border:1px solid #d8deea;background:#fff;display:grid;place-items:center;color:transparent;font-weight:900;transition:.18s ease}
+.fancy-check.done{background:linear-gradient(135deg,#17b26a,#12a061);border-color:transparent;color:white;box-shadow:0 10px 22px rgba(22,155,98,.18)}
+.fancy-check.open{background:#fff;color:transparent}
+.checkbox-label{display:flex;align-items:center;gap:10px;font-weight:800}
+.person{display:flex;align-items:center;gap:9px}.person strong{font-size:13px}.person .small{font-size:11px}
+.badge{display:inline-flex;width:max-content;align-items:center;justify-content:center;border-radius:99px;padding:5px 8px;font-size:12px;font-weight:850}.red{color:var(--red);background:rgba(217,45,32,.09)}.green{color:var(--green);background:rgba(22,155,98,.10)}.amber{color:var(--amber);background:rgba(217,130,43,.11)}.blue{color:var(--blue);background:rgba(79,70,229,.10)}
+.decision-list{display:grid;gap:11px}.decision{display:grid;grid-template-columns:36px minmax(0,1fr)170px 110px 24px;gap:14px;align-items:center;border:1px solid var(--line);border-radius:17px;background:white;padding:15px;transition:.18s ease;cursor:pointer}.decision:hover{background:#fbfcff}
+.num{width:30px;height:30px;border-radius:999px;background:rgba(79,70,229,.10);color:var(--blue);display:grid;place-items:center;font-weight:900}.decision h3{margin:0 0 6px;font-size:14px;line-height:1.35}.decision p{margin:0;color:var(--muted);font-size:12px;line-height:1.42}
+.documentation-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  background:transparent;
+  color:var(--text);
+  padding:0;
+  font-weight:850;
+}
+.documentation-toggle span{
+  color:var(--muted);
+  font-size:13px;
+  font-weight:760;
+}
+.documentation-body{
+  display:none;
+  margin-top:14px;
+}
+.documentation-body.open{
+  display:block;
+}
+.timeline{border:1px solid var(--line);border-radius:17px;background:white;overflow:hidden}.event{display:grid;grid-template-columns:130px 1fr 160px;gap:12px;padding:14px;border-bottom:1px solid var(--line);align-items:center}.event:last-child{border-bottom:0}.dot{width:8px;height:8px;border-radius:99px;background:var(--blue);display:inline-block;margin-right:8px}
+.aside{display:grid;gap:15px;position:sticky;top:24px}.side-panel{padding:18px;background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 38px rgba(16,24,40,.05)}.side-panel h3{font-size:16px;letter-spacing:-.025em;margin:0 0 13px}.activity{display:grid;gap:12px}.activity-item{display:grid;grid-template-columns:30px 1fr;gap:9px;font-size:13px;line-height:1.42}.insight{border:1px solid rgba(79,70,229,.13);background:rgba(79,70,229,.07);border-radius:15px;padding:12px;font-size:13px;line-height:1.48;color:#344054}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(16,24,40,.38);backdrop-filter:blur(9px);z-index:40;place-items:center;padding:20px}.modal-bg.open{display:grid}.modal{background:#fff;border:1px solid rgba(255,255,255,.7);border-radius:26px;width:min(780px,100%);max-height:90vh;overflow:auto;box-shadow:0 34px 90px rgba(16,24,40,.24)}.modal header{padding:22px 24px 15px;border-bottom:1px solid var(--line)}.modal h2{font-size:26px;margin:0 0 7px;letter-spacing:-.04em}.modal-body{padding:22px 24px;display:grid;gap:13px}.modal-actions{padding:15px 24px 22px;display:flex;justify-content:flex-end;gap:10px}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:grid;gap:6px}.field label{font-size:12px;color:#475467;font-weight:800}.field input,.field textarea,.field select{border:1px solid var(--line);border-radius:13px;padding:10px 11px;background:white;outline:none;color:var(--text)}.field textarea{min-height:86px;resize:vertical}.field.full{grid-column:1/-1}.warn{display:none;color:var(--amber);font-size:12px;font-weight:780}.warn.show{display:block}
+.comment-box{border:1px solid var(--line);border-radius:17px;overflow:hidden;background:#fff}.comment{padding:13px 14px;border-bottom:1px solid var(--line)}.comment:last-child{border-bottom:0}.comment-form{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:8px}.comment-form input{border:1px solid var(--line);border-radius:13px;padding:10px}
+.toast{display:none;position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:60;background:#101828;color:white;border-radius:14px;padding:12px 15px;font-weight:760;box-shadow:0 16px 34px rgba(16,24,40,.22)}.toast.show{display:block}
+
+.row-actions{
+  display:flex;
+  justify-content:flex-end;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .16s ease;
+}
+.row.click:hover .row-actions,
+.decision:hover .row-actions{
+  opacity:1;
+  pointer-events:auto;
+}
+.kebab{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  border:1px solid transparent;
+  background:transparent;
+  color:#667085;
+  font-weight:900;
+}
+.kebab:hover{
+  background:#f2f4f7;
+  border-color:var(--line);
+}
+.action-menu{
+  position:absolute;
+  right:14px;
+  top:48px;
+  z-index:20;
+  width:150px;
+  padding:7px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 18px 38px rgba(16,24,40,.14);
+  display:none;
+}
+.action-menu.open{display:grid}
+.action-menu button{
+  width:100%;
+  padding:9px 10px;
+  border-radius:10px;
+  text-align:left;
+  background:transparent;
+  color:#344054;
+  font-weight:720;
+}
+.action-menu button:hover{background:#f7f8fc}
+.action-menu button.danger{color:var(--red)}
+.confirm-copy{color:var(--muted);line-height:1.55;margin:0}
+.confirm-name{font-weight:850;color:var(--text)}
+
+
+.decision-check{
+  width:30px;
+  height:30px;
+  border-radius:12px;
+  border:1px solid #d8deea;
+  background:#fff;
+  display:grid;
+  place-items:center;
+  color:transparent;
+  font-weight:900;
+  transition:.18s ease;
+}
+.decision-check.done{
+  background:linear-gradient(135deg,#17b26a,#12a061);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 10px 22px rgba(22,155,98,.18);
+}
+.decision-check.open{
+  background:#fff;
+  color:transparent;
+}
+.decision.is-done .decision-check{
+  background:linear-gradient(135deg,#17b26a,#12a061);
+  border-color:transparent;
+  color:#fff;
+}
+
+@media(max-width:1180px){.app{grid-template-columns:86px minmax(0,1fr)}.brand span,.nav .txt,.request-item .txt,.label,.user-card div:not(.avatar),.primary .txt{display:none}.sidebar{padding:22px 13px}.layout{grid-template-columns:1fr}.aside{position:static;grid-template-columns:repeat(2,1fr)}.meta{grid-template-columns:repeat(2,1fr)}.ready{grid-template-columns:130px 1fr}.next{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:16px 0 0}}
+@media(max-width:760px){.app{display:block}.sidebar{height:auto;position:relative;flex-direction:row;overflow:auto}.spacer,.user-card,.requests,.aside{display:none}main{padding:18px}.meta,.edit-grid{grid-template-columns:1fr}.ready,.row,.decision,.event{grid-template-columns:1fr;align-items:start}.row.header{display:none}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark">R</div><span>Readyness</span></div>
+    <button class="primary" onclick="openRequestModal()"><span class="txt">＋ Neue Anfrage</span></button>
+    <nav class="nav">
+      <button><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
+      <button class="active"><span class="ico">□</span><span class="txt">Anfragen</span></button>
+      <button><span class="ico">?</span><span class="txt">Entscheidungen</span></button>
+      <button><span class="ico">✓</span><span class="txt">Inputs</span></button>
+    </nav>
+    <div><div class="label">Requests</div><div class="requests" id="requestList"></div></div>
+    <div class="spacer"></div>
+    <div class="user-card"><div class="avatar">SB</div><div><strong>Sascha Büchel</strong><div class="small">Marketing</div></div></div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="topbar-left">← Zurück zur Übersicht</div>
+      <div class="top-actions">
+        <button class="secondary" onclick="toggleSidebar()">Sidebar</button>
+        <button class="secondary" onclick="editCurrent()">Details bearbeiten</button>
+        <button class="secondary" onclick="resetDemo()">Demo zurücksetzen</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="content">
+        <section class="panel hero">
+          <span class="request-id" id="requestId"></span>
+          <h1 id="title"></h1>
+          <p class="subtitle" id="description"></p>
+          <div class="meta">
+            <div class="meta-card"><label>Erstellt von</label><strong id="createdBy"></strong></div>
+            <div class="meta-card"><label>Erstellt am</label><strong id="createdAt"></strong></div>
+            <div class="meta-card"><label>Kategorie</label><strong id="category"></strong></div>
+            <div class="meta-card"><label>Gewünschte Deadline</label><strong id="deadline"></strong><div class="small">Nur eine Gesamtdeadline.</div></div>
+          </div>
+        </section>
+
+        <section class="ready">
+          <div class="ring" id="ring"><div class="ring-inner"><b id="score">0%</b><span>Readyness</span></div></div>
+          <div><h2 id="readyState">Nicht bereit</h2><p id="readyText"></p></div>
+          <div class="next"><label>Nächster Schritt</label><strong id="nextStep"></strong><button class="secondary" onclick="completeNextStep()">Schritt ausführen →</button></div>
+        </section>
+
+        <section class="panel section">
+          <div class="section-head"><h2>Pflicht-Inputs <span class="count" id="inputCount"></span></h2><button class="secondary" onclick="openInputCreate()">＋ Input hinzufügen</button></div>
+          <p class="hint">Inputs sind keine Aufgabenliste. Sie zeigen, welche Informationen fehlen, damit die Anfrage organisatorisch klar wird.</p>
+          <div class="table" id="inputsTable"></div>
+        </section>
+
+        <section class="panel section">
+          <div class="section-head"><h2>Entscheidungspunkte <span class="count" id="decisionCount"></span></h2><button class="secondary" onclick="openDecisionCreate()">＋ Entscheidungspunkt hinzufügen</button></div>
+          <p class="hint">Offene Entscheidungen, die vor Umsetzung klar dokumentiert werden müssen.</p>
+          <div class="decision-list" id="decisionList"></div>
+        </section>
+
+        <section class="panel section">
+          <button class="documentation-toggle" onclick="toggleDocumentation()">
+            <span style="font-size:18px;letter-spacing:-.03em;color:var(--text)">Dokumentation</span>
+            <span id="documentationToggleLabel">Aufklappen ↓</span>
+          </button>
+          <p class="hint" style="margin-top:8px">Automatische Dokumentation der wichtigsten Änderungen, Entscheidungen und erledigten Inputs.</p>
+          <div class="documentation-body" id="documentationBody">
+            <div class="timeline" id="timeline"></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="aside" id="aside">
+        <section class="side-panel"><h3>Kontext & Klarheit <span class="badge blue">Beta</span></h3><div class="activity" id="sideActivity"></div></section>
+        <section class="side-panel"><h3>Readyness-Hinweis</h3><div class="insight" id="aiHint"></div></section>
+        <section class="side-panel"><h3>Nächste Schritte</h3><div class="activity" id="sideSteps"></div></section>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="requestModal"><div class="modal">
+  <header><h2 id="requestModalTitle">Neue Anfrage</h2><p class="subtitle">Ein Request startet mit dem Ziel, nicht mit der Aufgabe.</p></header>
+  <div class="modal-body"><div class="edit-grid">
+    <div class="field"><label>Titel</label><input id="reqTitle"></div>
+    <div class="field"><label>Kategorie</label><input id="reqCategory"></div>
+    <div class="field"><label>Erstellt von</label><input id="reqCreatedBy"></div>
+    <div class="field"><label>Gewünschte Deadline</label><input id="reqDeadline" type="date"></div>
+    <div class="field full"><label>Beschreibung / Ziel</label><textarea id="reqDesc"></textarea></div>
+  </div></div>
+  <div class="modal-actions"><button class="secondary" onclick="closeRequestModal()">Abbrechen</button><button class="primary" onclick="saveRequest()">Speichern</button></div>
+</div></div>
+
+<div class="modal-bg" id="inputModal"><div class="modal">
+  <header><h2 id="inputModalTitle">Input</h2><p class="subtitle" id="inputModalSub">Ein Input beschreibt eine notwendige Information und den verantwortlichen Menschen.</p></header>
+  <div class="modal-body" id="inputModalBody"></div>
+  <div class="modal-actions" id="inputModalActions"></div>
+</div></div>
+
+<div class="modal-bg" id="decisionModal"><div class="modal">
+  <header><h2 id="decisionModalTitle">Entscheidungspunkt</h2><p class="subtitle" id="decisionModalSub">Entscheidungen müssen später nachvollziehbar bleiben.</p></header>
+  <div class="modal-body" id="decisionModalBody"></div>
+  <div class="modal-actions" id="decisionModalActions"></div>
+</div></div>
+
+
+<div class="modal-bg" id="deleteModal"><div class="modal" style="width:min(520px,100%)">
+  <header><h2 id="deleteTitle">Eintrag löschen?</h2><p class="confirm-copy" id="deleteCopy"></p></header>
+  <div class="modal-actions">
+    <button class="secondary" onclick="closeDeleteModal()">Abbrechen</button>
+    <button class="primary" style="background:linear-gradient(135deg,#ef4444,#dc2626)" onclick="confirmDelete()">Löschen</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "readyness-prototype-v3";
+let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
+
+const demo={requests:[{id:"REQ-2025-045",title:"Verpackung Rückleuchte",description:"Erstellung der Verpackung für die neue Rückleuchte – inklusive Druckdaten, Freigaben und Produkthandling.",createdBy:"Sascha Büchel",createdAt:"20. Mai 2025",category:"Verpackung",deadline:"2025-05-28",inputs:[
+{name:"Produktbilder",done:false,owner:"Lukas H.",dept:"Produktdesign",desc:"Front-, Rückseite und 3/4-Ansicht",comments:["Lukas H.: Ich kläre, ob die 3/4-Ansicht bereits verfügbar ist."]},
+{name:"Produktdaten / Spezifikationen",done:true,owner:"Anna K.",dept:"Vertrieb",desc:"Maße, Gewicht und Material",comments:["Anna K.: Artikeldaten wurden aus der aktuellen Liste übernommen."]},
+{name:"Verpackungsbasis",done:false,owner:"Sascha Büchel",dept:"Marketing",desc:"Referenz oder bestehende Vorlage",comments:[]},
+{name:"Freigabe Vertrieb",done:false,owner:"Thomas W.",dept:"Sales Lead",desc:"Vertrieb bestätigt Anforderungen",comments:[]},
+{name:"Finale Produktentscheidung",done:false,owner:"Miriam L.",dept:"Produktmanagement",desc:"Einzelprodukt oder nur im Set?",comments:[]}
+],decisions:[
+{question:"Wird die Rückleuchte als Einzelprodukt oder nur im Set verkauft?",reason:"Diese Entscheidung beeinflusst Verpackung, POS-Placement und Stückzahlen.",owner:"Miriam L.",decided:false,decision:"",comments:[]},
+{question:"Welche Verpackungsbasis soll verwendet werden?",reason:"Auswahl beeinflusst Material, Druckfläche und Stabilität.",owner:"Sascha Büchel",decided:false,decision:"",comments:[]}
+],log:["Anna K. hat Produktdaten / Spezifikationen als vorhanden markiert.","Sascha Büchel hat einen Entscheidungspunkt erstellt."]}]};
+
+function $(id){return document.getElementById(id)}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function load(){state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||structuredClone(demo);currentId=state.requests[0].id}
+function current(){return state.requests.find(r=>r.id===currentId)}
+function fmtDate(v){if(!v)return"—";return new Date(v+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"})}
+function initials(n){return(n||"?").split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase()}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
+function score(r){const total=r.inputs.length+r.decisions.length;if(!total)return 0;return Math.round(((r.inputs.filter(i=>i.done).length+r.decisions.filter(d=>d.decided).length)/total)*100)}
+function ringColor(s){
+  if(s>=100) return "#16a34a";
+  if(s<25) return "#d92d20";
+  if(s<50) return "#f97316";
+  if(s<75) return "#f59e0b";
+  return "#22c55e";
+}
+
+function hasValidInputComment(i){
+  return (i.comments||[]).some(c=>{
+    const parts=String(c).split(":");
+    const text=parts.length>1?parts.slice(1).join(":").trim():String(c).trim();
+    return text.length>=15;
+  });
+}
+
+function readinessText(r){const mi=r.inputs.filter(i=>!i.done).length, od=r.decisions.filter(d=>!d.decided).length;if(mi===0&&od===0)return"Alle wesentlichen Inputs und Entscheidungen sind geklärt. Der Request ist bereit für die Umsetzung.";return`Es fehlen noch ${mi} Input(s) und ${od} Entscheidungspunkt(e). Der Request sollte noch nicht in die Umsetzung gehen.`}
+function nextStep(r){const i=r.inputs.find(x=>!x.done),d=r.decisions.find(x=>!x.decided);if(i)return`${i.name} von ${i.owner} klären`;if(d)return`Entscheidung von ${d.owner} einholen`;return"Bereit zur Umsetzung"}
+
+function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("category").textContent=r.category;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
+function renderRequestList(){$("requestList").innerHTML=state.requests.map(r=>`<button class="request-item ${r.id===currentId?"active":""}" onclick="selectRequest('${r.id}')"><div class="request-title"><span class="txt">${esc(r.title)}</span><span class="badge ${score(r)===100?"green":"blue"}">${score(r)}%</span></div><div class="request-meta txt">${esc(r.category)} · ${fmtDate(r.deadline)}</div></button>`).join("")}
+function renderInputs(r){$("inputsTable").innerHTML=`<div class="row header"><div>Input</div><div>Status</div><div>Verantwortlich</div><div>Bereich</div><div></div></div>${r.inputs.map((i,idx)=>`<div class="row click ${i.done?"is-done":""}" onclick="openInputDetail(${idx})"><div class="name">${esc(i.name)}<span class="small">${esc(i.desc)}</span></div><div><div class="checkbox-label"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Erledigt":"Offen"}</span></div></div><div class="person"><div class="avatar">${initials(i.owner)}</div><div><strong>${esc(i.owner)}</strong></div></div><div class="small">${esc(i.dept)}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('input',${idx})">⋮</button><div class="action-menu" id="input-menu-${idx}"><button onclick="openInputDetail(${idx})">Bearbeiten</button><button class="danger" onclick="askDeleteInput(${idx})">Löschen</button></div></div></div>`).join("")}`}
+function renderDecisions(r){$("decisionList").innerHTML=r.decisions.map((d,idx)=>`<article class="decision ${d.decided?"is-done":""}" onclick="openDecisionDetail(${idx})"><div><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span></div><div><h3>${esc(d.question)}</h3><p>${esc(d.reason)}</p></div><div class="person"><div class="avatar">${initials(d.owner)}</div><div><strong>${esc(d.owner)}</strong></div></div><div><span class="badge ${d.decided?"green":"red"}">${d.decided?"Entschieden":"Offen"}</span></div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('decision',${idx})">⋮</button><div class="action-menu" id="decision-menu-${idx}"><button onclick="openDecisionDetail(${idx})">Bearbeiten</button><button class="danger" onclick="askDeleteDecision(${idx})">Löschen</button></div></div></article>`).join("")||`<p class="hint">Noch keine Entscheidungspunkte vorhanden.</p>`}
+function renderTimeline(r){$("timeline").innerHTML=r.log.slice().reverse().map((e,idx)=>`<div class="event"><div><span class="dot"></span>${idx===0?"Aktuell":"Früher"}</div><div>${esc(e)}</div><div class="small">Readyness</div></div>`).join("")}
+function renderAside(r){$("sideActivity").innerHTML=r.log.slice(-3).reverse().map(e=>`<div class="activity-item"><div class="avatar">R</div><div>${esc(e)}<div class="small">Gerade eben</div></div></div>`).join("");$("aiHint").textContent=readinessText(r);$("sideSteps").innerHTML=`<div>☐ ${esc(nextStep(r))}</div><div>☐ offene Inputs prüfen</div><div>☐ Entscheidungspunkte dokumentieren</div>`}
+function selectRequest(id){currentId=id;render()}
+
+
+function closeAllMenus(){
+  document.querySelectorAll(".action-menu.open").forEach(menu=>menu.classList.remove("open"));
+}
+function toggleActionMenu(type,idx){
+  closeAllMenus();
+  const menu=$(type+"-menu-"+idx);
+  if(menu) menu.classList.add("open");
+}
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest(".row-actions")) closeAllMenus();
+});
+function askDeleteInput(idx){
+  closeAllMenus();
+  const item=current().inputs[idx];
+  deleteTarget={type:"input",idx};
+  $("deleteTitle").textContent="Input löschen?";
+  $("deleteCopy").innerHTML=`Möchtest du den Input <span class="confirm-name">„${esc(item.name)}“</span> wirklich löschen?<br>Diese Aktion kann nicht rückgängig gemacht werden.`;
+  $("deleteModal").classList.add("open");
+}
+function askDeleteDecision(idx){
+  closeAllMenus();
+  const item=current().decisions[idx];
+  deleteTarget={type:"decision",idx};
+  $("deleteTitle").textContent="Entscheidungspunkt löschen?";
+  $("deleteCopy").innerHTML=`Möchtest du den Entscheidungspunkt <span class="confirm-name">„${esc(item.question)}“</span> wirklich löschen?<br>Diese Aktion kann nicht rückgängig gemacht werden.`;
+  $("deleteModal").classList.add("open");
+}
+function closeDeleteModal(){
+  $("deleteModal").classList.remove("open");
+  deleteTarget=null;
+}
+function confirmDelete(){
+  if(!deleteTarget) return;
+  const r=current();
+  if(deleteTarget.type==="input"){
+    const removed=r.inputs.splice(deleteTarget.idx,1)[0];
+    r.log.push(`Input „${removed.name}“ wurde gelöscht.`);
+  }
+  if(deleteTarget.type==="decision"){
+    const removed=r.decisions.splice(deleteTarget.idx,1)[0];
+    r.log.push(`Entscheidungspunkt „${removed.question}“ wurde gelöscht.`);
+  }
+  closeDeleteModal();
+  render();
+  toast("Eintrag gelöscht");
+}
+
+function openInputCreate(){activeInputIndex=null;$("inputModalTitle").textContent="Input anlegen";$("inputModalSub").textContent="Der Ersteller definiert den organisatorischen Rahmen.";renderInputForm({name:"",owner:"",dept:"",desc:"",done:false,comments:[]});$("inputModal").classList.add("open")}
+function openInputDetail(idx){activeInputIndex=idx;const i=current().inputs[idx];$("inputModalTitle").textContent=i.name;$("inputModalSub").textContent="Der Verantwortliche ergänzt Informationen, Kommentare oder relevante Kontextdateien.";renderInputDetail(i,idx);$("inputModal").classList.add("open")}
+function renderInputForm(i){$("inputModalBody").innerHTML=`<div class="edit-grid"><div class="field"><label>Name</label><input id="inputName" value="${esc(i.name)}"></div><div class="field"><label>Verantwortlich</label><input id="inputOwner" value="${esc(i.owner)}"></div><div class="field"><label>Bereich</label><select id="inputDept"><option>Einkauf</option><option>GF</option><option>Vertrieb</option><option>Marketing</option><option>Produktion</option></select></div><div class="field"><label>Status</label><select id="inputDone"><option value="false">Offen</option><option value="true">Erledigt</option></select></div><div class="field full"><label>Beschreibung</label><textarea id="inputDesc">${esc(i.desc)}</textarea></div></div>`;$("inputModalActions").innerHTML=`<button class="secondary" onclick="closeInputModal()">Abbrechen</button><button class="primary" onclick="saveInput()">Input speichern</button>`;setTimeout(()=>{$("inputDone").value=String(i.done); if($("inputDept")) $("inputDept").value=i.dept||"Marketing"},0)}
+function renderInputDetail(i,idx){$("inputModalBody").innerHTML=`<div class="edit-grid"><div class="field"><label>Status</label><button class="secondary" onclick="toggleInputDone(${idx})" style="display:flex;align-items:center;justify-content:flex-start;gap:10px"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Erledigt":"Als erledigt markieren"}</span></button><div class="small">Zum Erledigen ist mindestens ein Kommentar mit 15 Zeichen nötig.</div></div><div class="field"><label>Verantwortlich</label><div class="person"><div class="avatar">${initials(i.owner)}</div><div><strong>${esc(i.owner)}</strong></div></div></div><div class="field full"><label>Beschreibung</label><p class="subtitle">${esc(i.desc)}</p></div><div class="field full"><label>Kommentar / Information ergänzen</label><div class="comment-form"><input id="inputComment" placeholder="z. B. Artikel-Nr., Hinweis, Status oder relevante Info"><button class="secondary" onclick="addInputComment(${idx})">Kommentieren</button></div></div><div class="field full"><label>Wichtiges Dokument / Kontextdatei</label><button class="secondary" onclick="toast('Demo: Kontextdatei würde hochgeladen und ausgelesen')">＋ Datei hochladen</button><div class="small">Nur Dateien hochladen, aus denen organisatorischer Kontext gewonnen werden soll.</div></div><div class="field full"><label>Verlauf & Kommentare</label><div class="comment-box">${(i.comments||[]).map(c=>`<div class="comment">${esc(c)}</div>`).join("")||`<div class="comment small">Noch keine Kommentare.</div>`}</div></div></div>`;$("inputModalActions").innerHTML=`<button class="secondary" onclick="renderInputForm(current().inputs[${idx}])">Struktur bearbeiten</button><button class="primary" onclick="closeInputModal()">Schließen</button>`}
+function closeInputModal(){$("inputModal").classList.remove("open")}
+function saveInput(){const data={name:$("inputName").value,owner:$("inputOwner").value,dept:$("inputDept").value,desc:$("inputDesc").value,done:$("inputDone").value==="true",comments:activeInputIndex===null?[]:(current().inputs[activeInputIndex].comments||[])};if(!data.name.trim()||!data.owner.trim()){toast("Bitte Name und Verantwortlichen eintragen.");return}const r=current();if(activeInputIndex===null){r.inputs.push(data);r.log.push(`Input „${data.name}“ wurde angelegt.`)}else{r.inputs[activeInputIndex]=data;r.log.push(`Input „${data.name}“ wurde bearbeitet.`)}closeInputModal();render()}
+function toggleInputDone(idx){const i=current().inputs[idx];if(!i.done && !hasValidInputComment(i)){toast("Bitte zuerst einen Kommentar mit mindestens 15 Zeichen ergänzen.");return}i.done=!i.done;current().log.push(`Input „${i.name}“ wurde als ${i.done?"erledigt":"offen"} markiert.`);render();openInputDetail(idx)}
+function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);current().log.push(`Kommentar zu Input „${i.name}“ hinzugefügt.`);render();openInputDetail(idx)}
+
+function openDecisionCreate(){activeDecisionIndex=null;$("decisionModalTitle").textContent="Entscheidungspunkt anlegen";$("decisionModalSub").textContent="Eine Entscheidung braucht Frage, Begründung und Entscheider.";renderDecisionForm({question:"",reason:"",owner:"",decided:false,decision:"",comments:[]});$("decisionModal").classList.add("open")}
+function openDecisionDetail(idx){activeDecisionIndex=idx;const d=current().decisions[idx];$("decisionModalTitle").textContent=d.question;$("decisionModalSub").textContent="Entscheider dokumentieren, was entschieden wurde und warum.";renderDecisionDetail(d,idx);$("decisionModal").classList.add("open")}
+function renderDecisionForm(d){$("decisionModalBody").innerHTML=`<div class="field"><label>Was muss entschieden werden?</label><textarea id="decisionQuestion">${esc(d.question)}</textarea><span class="warn" id="questionWarn">Bitte formuliere eine vollständige Entscheidungsfrage.</span></div><div class="field"><label>Warum ist diese Entscheidung wichtig?</label><textarea id="decisionReason">${esc(d.reason)}</textarea><span class="warn" id="reasonWarn">Die Begründung wirkt noch zu kurz.</span></div><div class="edit-grid"><div class="field"><label>Entscheider</label><input id="decisionOwner" value="${esc(d.owner)}"></div><div class="field"><label>Status</label><select id="decisionDone"><option value="false">Offen</option><option value="true">Entschieden</option></select></div></div><div class="field"><label>Finale Entscheidung</label><textarea id="decisionText">${esc(d.decision||"")}</textarea></div>`;$("decisionModalActions").innerHTML=`<button class="secondary" onclick="closeDecisionModal()">Abbrechen</button><button class="primary" onclick="saveDecision()">Speichern</button>`;setTimeout(()=>{$("decisionDone").value=String(d.decided)},0)}
+function renderDecisionDetail(d,idx){$("decisionModalBody").innerHTML=`<div class="edit-grid"><div class="field"><label>Status</label><button class="secondary" onclick="toggleDecision(${idx})" style="display:flex;align-items:center;justify-content:flex-start;gap:10px"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><span>${d.decided?"Entschieden – rückgängig":"Als entschieden markieren"}</span></button></div><div class="field"><label>Entscheider</label><div class="person"><div class="avatar">${initials(d.owner)}</div><div><strong>${esc(d.owner)}</strong></div></div></div><div class="field full"><label>Warum ist diese Entscheidung wichtig?</label><p class="subtitle">${esc(d.reason)}</p></div><div class="field full"><label>Finale Entscheidung</label><textarea id="decisionResult" placeholder="Beschreibe die Entscheidung in vollständigen Sätzen.">${esc(d.decision||"")}</textarea></div><div class="field full"><label>Kommentar ergänzen</label><div class="comment-form"><input id="decisionComment" placeholder="Hinweis, Rückfrage oder Kontext"><button class="secondary" onclick="addDecisionComment(${idx})">Kommentieren</button></div></div><div class="field full"><label>Kontextdatei auslesen</label><button class="secondary" onclick="toast('Demo: Datei würde hochgeladen und ausgelesen')">＋ Datei hochladen</button></div><div class="field full"><label>Verlauf & Kommentare</label><div class="comment-box">${(d.comments||[]).map(c=>`<div class="comment">${esc(c)}</div>`).join("")||`<div class="comment small">Noch keine Kommentare.</div>`}</div></div></div>`;$("decisionModalActions").innerHTML=`<button class="secondary" onclick="renderDecisionForm(current().decisions[${idx}])">Struktur bearbeiten</button><button class="primary" onclick="saveDecisionResult(${idx})">Entscheidung speichern</button>`}
+function closeDecisionModal(){$("decisionModal").classList.remove("open")}
+function saveDecision(){const q=$("decisionQuestion").value.trim(),reason=$("decisionReason").value.trim();const qOk=q.split(/\s+/).length>=6&&q.endsWith("?"),rOk=reason.split(/\s+/).length>=8;$("questionWarn").classList.toggle("show",!qOk);$("reasonWarn").classList.toggle("show",!rOk);if(!qOk||!rOk)return;const data={question:q,reason,owner:$("decisionOwner").value||"Noch nicht zugewiesen",decided:$("decisionDone").value==="true",decision:$("decisionText").value,comments:activeDecisionIndex===null?[]:(current().decisions[activeDecisionIndex].comments||[])};const r=current();if(activeDecisionIndex===null){r.decisions.push(data);r.log.push(`Entscheidungspunkt „${q}“ wurde angelegt.`)}else{r.decisions[activeDecisionIndex]=data;r.log.push(`Entscheidungspunkt „${q}“ wurde bearbeitet.`)}closeDecisionModal();render()}
+function saveDecisionResult(idx){const val=$("decisionResult").value.trim();if(val.split(/\s+/).length<6){toast("Bitte Entscheidung in einem vollständigen Satz formulieren.");return}const d=current().decisions[idx];d.decision=val;d.decided=true;current().log.push(`Entscheidung „${d.question}“ wurde dokumentiert.`);closeDecisionModal();render()}
+function toggleDecision(idx){const d=current().decisions[idx];d.decided=!d.decided;if(d.decided&&!d.decision)d.decision="Die Entscheidung wurde getroffen und muss noch genauer dokumentiert werden.";current().log.push(`Entscheidungspunkt „${d.question}“ wurde als ${d.decided?"entschieden":"offen"} markiert.`);render();openDecisionDetail(idx)}
+function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!val)return;const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);current().log.push(`Kommentar zu Entscheidungspunkt hinzugefügt.`);render();openDecisionDetail(idx)}
+
+function openRequestModal(){editingRequest=false;$("requestModalTitle").textContent="Neue Anfrage";$("reqTitle").value="";$("reqCategory").value="Verpackung";$("reqCreatedBy").value="Sascha Büchel";$("reqDeadline").value="";$("reqDesc").value="";$("requestModal").classList.add("open")}
+function editCurrent(){const r=current();editingRequest=true;$("requestModalTitle").textContent="Anfrage bearbeiten";$("reqTitle").value=r.title;$("reqCategory").value=r.category;$("reqCreatedBy").value=r.createdBy;$("reqDeadline").value=r.deadline;$("reqDesc").value=r.description;$("requestModal").classList.add("open")}
+function closeRequestModal(){$("requestModal").classList.remove("open")}
+function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintragen.");return}if(editingRequest){Object.assign(current(),{title:$("reqTitle").value,category:$("reqCategory").value,createdBy:$("reqCreatedBy").value,deadline:$("reqDeadline").value,description:$("reqDesc").value});current().log.push("Anfragedetails wurden bearbeitet.")}else{const id="REQ-"+new Date().getFullYear()+"-"+String(Math.floor(Math.random()*900)+100);state.requests.push({id,title:$("reqTitle").value,description:$("reqDesc").value,createdBy:$("reqCreatedBy").value,createdAt:new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"}),category:$("reqCategory").value,deadline:$("reqDeadline").value,inputs:[],decisions:[],log:["Request wurde erstellt."]});currentId=id}closeRequestModal();render()}
+function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){const i=r.inputs[inputIndex];if(!hasValidInputComment(i)){toast("Input braucht zuerst einen Kommentar mit mindestens 15 Zeichen.");openInputDetail(inputIndex);return}i.done=true;r.log.push(`Input „${i.name}“ wurde erledigt.`);render();return}const d=r.decisions.find(x=>!x.decided);if(d){d.decided=true;if(!d.decision)d.decision="Die Entscheidung wurde getroffen und muss noch genauer dokumentiert werden.";r.log.push(`Entscheidungspunkt „${d.question}“ wurde als entschieden markiert.`);render();return}toast("Request ist bereits bereit.")}
+function addLog(text){current().log.push(text);render()}
+function toggleSidebar(){const a=$("aside");a.style.display=a.style.display==="none"?"grid":"none"}
+function toggleDocumentation(){
+  const body=$("documentationBody");
+  const label=$("documentationToggleLabel");
+  body.classList.toggle("open");
+  label.textContent=body.classList.contains("open")?"Zuklappen ↑":"Aufklappen ↓";
+}
+function resetDemo(){localStorage.removeItem(STORAGE_KEY);load();render();toast("Demo zurückgesetzt")}
+load();render();
+</script>
+</body>
+</html>
