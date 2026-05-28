@@ -9,3 +9,9 @@
 
 ## Lokal öffnen
 `index.html` per Doppelklick im Browser öffnen.
+
+
+## v11
+- Input- und Entscheidungsdialoge als breite Side-Drawer überarbeitet.
+- Projekt modularisiert: CSS und JavaScript liegen nun in getrennten Ordnern.
+- Hauptlayout, Readyness-Kreis und bestehende Dashboard-Struktur bleiben unverändert.
