@@ -315,20 +315,55 @@ function saveDecision(){
   if(!validateDecisionForm(true))return;
   const q=$("decisionQuestion").value.trim(),reason=$("decisionReason").value.trim(),decisionText=$("decisionText").value.trim();
   const decided=$("decisionDone").value==="true";
-  const data={question:q,reason,owner:$("decisionOwner").value||"Noch nicht zugewiesen",decided,decision:decisionText,comments:activeDecisionIndex===null?[]:(current().decisions[activeDecisionIndex].comments||[])};
+  const data={
+    question:q,
+    reason,
+    owner:$("decisionOwner").value||"Noch nicht zugewiesen",
+    decided,
+    decision:decided?decisionText:"",
+    comments:activeDecisionIndex===null?[]:(current().decisions[activeDecisionIndex].comments||[])
+  };
   const r=current();
   if(activeDecisionIndex===null){r.decisions.push(data);r.log.push(`Entscheidungspunkt „${q}“ wurde angelegt.`)}else{r.decisions[activeDecisionIndex]=data;r.log.push(`Entscheidungspunkt „${q}“ wurde bearbeitet.`)}
   closeDecisionModal();render()
 }
-function saveDecisionResult(idx){const val=$("decisionResult").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return}const d=current().decisions[idx];d.decision=val;d.decided=true;current().log.push(`Entscheidung „${d.question}“ wurde dokumentiert.`);closeDecisionModal();render()}
-function toggleDecision(idx){const d=current().decisions[idx];d.decided=!d.decided;if(d.decided&&!d.decision)d.decision="Die Entscheidung wurde getroffen und muss noch genauer dokumentiert werden.";current().log.push(`Entscheidungspunkt „${d.question}“ wurde als ${d.decided?"entschieden":"offen"} markiert.`);render();openDecisionDetail(idx)}
+function saveDecisionResult(idx){
+  const val=$("decisionResult").value.trim();
+  if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return}
+  const d=current().decisions[idx];
+  d.decision=val;
+  d.decided=true;
+  current().log.push(`Entscheidung „${d.question}“ wurde dokumentiert.`);
+  closeDecisionModal();render()
+}
+function toggleDecision(idx){
+  const d=current().decisions[idx];
+  if(d.decided){
+    d.decided=false;
+    d.decision="";
+    current().log.push(`Entscheidungspunkt „${d.question}“ wurde wieder geöffnet.`);
+    render();openDecisionDetail(idx);
+    return;
+  }
+  const resultEl=$("decisionResult");
+  const val=resultEl?resultEl.value.trim():(d.decision||"").trim();
+  if(!isSentenceWithThreeWords(val)){
+    if(resultEl){resultEl.classList.add("invalid");resultEl.focus()}
+    toast("Bitte begründe die Entscheidung mit mindestens einem vollständigen Satz aus drei Wörtern.");
+    return;
+  }
+  d.decision=val;
+  d.decided=true;
+  current().log.push(`Entscheidungspunkt „${d.question}“ wurde als entschieden markiert.`);
+  render();openDecisionDetail(idx)
+}
 function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return;}const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);current().log.push(`Kommentar zu Entscheidungspunkt hinzugefügt.`);render();openDecisionDetail(idx)}
 
 function openRequestModal(){editingRequest=false;$("requestModalTitle").textContent="Neue Anfrage";$("reqTitle").value="";$("reqCategory").value="Verpackung";$("reqCreatedBy").value="Sascha Boss";$("reqDeadline").value="";$("reqDesc").value="";$("requestModal").classList.add("open")}
 function editCurrent(){const r=current();editingRequest=true;$("requestModalTitle").textContent="Anfrage bearbeiten";$("reqTitle").value=r.title;$("reqCategory").value=r.category;$("reqCreatedBy").value=r.createdBy;$("reqDeadline").value=r.deadline;$("reqDesc").value=r.description;$("requestModal").classList.add("open")}
 function closeRequestModal(){$("requestModal").classList.remove("open")}
 function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintragen.");return}if(editingRequest){Object.assign(current(),{title:$("reqTitle").value,category:$("reqCategory").value,createdBy:$("reqCreatedBy").value,deadline:$("reqDeadline").value,description:$("reqDesc").value});current().log.push("Anfragedetails wurden bearbeitet.")}else{const id="REQ-"+new Date().getFullYear()+"-"+String(Math.floor(Math.random()*900)+100);state.requests.push({id,title:$("reqTitle").value,description:$("reqDesc").value,createdBy:$("reqCreatedBy").value,createdAt:new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"}),category:$("reqCategory").value,deadline:$("reqDeadline").value,inputs:[],decisions:[],log:["Request wurde erstellt."]});currentId=id}closeRequestModal();render()}
-function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){const i=r.inputs[inputIndex];if(!hasValidInputComment(i)){toast("Input braucht zuerst einen Kommentar mit mindestens 15 Zeichen.");openInputDetail(inputIndex);return}i.done=true;r.log.push(`Input „${i.name}“ wurde erledigt.`);render();return}const d=r.decisions.find(x=>!x.decided);if(d){d.decided=true;if(!d.decision)d.decision="Die Entscheidung wurde getroffen und muss noch genauer dokumentiert werden.";r.log.push(`Entscheidungspunkt „${d.question}“ wurde als entschieden markiert.`);render();return}toast("Request ist bereits bereit.")}
+function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){const i=r.inputs[inputIndex];if(!hasValidInputComment(i)){toast("Input braucht zuerst einen Kommentar mit mindestens 15 Zeichen.");openInputDetail(inputIndex);return}i.done=true;r.log.push(`Input „${i.name}“ wurde erledigt.`);render();return}const decisionIndex=r.decisions.findIndex(x=>!x.decided);if(decisionIndex>=0){toast("Entscheidungen brauchen zuerst eine begründete Dokumentation.");openDecisionDetail(decisionIndex);return}toast("Request ist bereits bereit.")}
 function addLog(text){current().log.push(text);render()}
 function toggleSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.add("open");b.classList.add("open");lockPageScroll()}
 function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll()}
@@ -339,4 +374,10 @@ function toggleDocumentation(){
   label.textContent=body.classList.contains("open")?"Zuklappen ↑":"Aufklappen ↓";
 }
 function resetDemo(){localStorage.removeItem(STORAGE_KEY);load();render();toast("Demo zurückgesetzt")}
+document.addEventListener("input",(event)=>{
+  if(event.target&&event.target.id==="decisionResult"&&isSentenceWithThreeWords(event.target.value.trim())){
+    event.target.classList.remove("invalid");
+  }
+});
+
 load();render();
