@@ -1,5 +1,5 @@
-const STORAGE_KEY = "readyness-prototype-v21";
-let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null,pendingReadyMomentId=null;
+const STORAGE_KEY = "readyness-prototype-v27";
+let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
 
 const mockUsers=[
   {name:"Sascha Boss",role:"Marketing"},
@@ -23,7 +23,10 @@ const demo={requests:[{id:"REQ-2025-045",title:"Verpackung Rückleuchte",descrip
 ],decisions:[
 {question:"Wird die Rückleuchte als Einzelprodukt oder nur im Set verkauft?",reason:"Diese Entscheidung beeinflusst Verpackung, POS-Placement und Stückzahlen.",owner:"Miriam Lang",decided:false,decision:"",comments:[]},
 {question:"Welche Verpackungsbasis soll verwendet werden?",reason:"Auswahl beeinflusst Material, Druckfläche und Stabilität.",owner:"Sascha Boss",decided:false,decision:"",comments:[]}
-],log:["Anna Keller hat Produktdaten / Spezifikationen als vorhanden markiert.","Sascha Boss hat einen Entscheidungspunkt erstellt."]}]};
+],log:[
+  {user:"Anna Keller",action:"hat den Input freigegeben",object:"Produktdaten / Spezifikationen",time:"20. Mai 2025",context:"Artikeldaten wurden aus der aktuellen Liste übernommen."},
+  {user:"Sascha Boss",action:"hat einen Entscheidungspunkt erstellt",object:"Welche Verpackungsbasis soll verwendet werden?",time:"20. Mai 2025",context:""}
+]}]};
 
 function $(id){return document.getElementById(id)}
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
@@ -33,46 +36,17 @@ function fmtDate(v){if(!v)return"—";return new Date(v+"T12:00:00").toLocaleDat
 function initials(n){return(n||"?").split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase()}
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
+function currentUser(){return "Sascha Boss"}
+function timeNow(){return new Date().toLocaleString("de-DE",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}
+function historyEntry(user,action,object,context=""){return {user,action,object,time:timeNow(),context}}
+function addHistory(action,object,context="",user=currentUser()){current().log.push(historyEntry(user,action,object,context))}
+function formatHistoryEntry(entry){
+  if(typeof entry==="string")return {user:"Readyness",text:entry,time:"",context:""};
+  const obj=entry.object?` „${entry.object}“`:"";
+  return {user:entry.user||"Readyness",text:`${entry.user||"Readyness"} ${entry.action||"hat eine Aktion durchgeführt"}${obj}.`,time:entry.time||"",context:entry.context||""};
+}
+
 function score(r){const total=r.inputs.length+r.decisions.length;if(!total)return 0;return Math.round(((r.inputs.filter(i=>i.done).length+r.decisions.filter(d=>d.decided).length)/total)*100)}
-function readyMomentKey(id){return `readyness-ready-moment-${id}`}
-function isAnyDrawerOpen(){
-  return Boolean(
-    $("inputModal")?.classList.contains("open") ||
-    $("decisionModal")?.classList.contains("open") ||
-    $("aside")?.classList.contains("open")
-  );
-}
-function launchReadyMoment(r){
-  if(!r || localStorage.getItem(readyMomentKey(r.id))==="seen")return;
-  localStorage.setItem(readyMomentKey(r.id),"seen");
-  pendingReadyMomentId=null;
-  setTimeout(()=>{
-    const ring=$("ring");
-    if(!ring)return;
-    ring.classList.remove("rocket-launching");
-    void ring.offsetWidth;
-    ring.classList.add("rocket-launching");
-    setTimeout(()=>ring.classList.remove("rocket-launching"),2800);
-  },220);
-}
-function triggerReadyMomentIfNeeded(r,s){
-  if(s!==100)return;
-  if(localStorage.getItem(readyMomentKey(r.id))==="seen")return;
-  if(isAnyDrawerOpen()){
-    pendingReadyMomentId=r.id;
-    return;
-  }
-  launchReadyMoment(r);
-}
-function flushPendingReadyMoment(){
-  if(!pendingReadyMomentId || isAnyDrawerOpen())return;
-  const r=state.requests.find(req=>req.id===pendingReadyMomentId);
-  if(r && score(r)===100){
-    launchReadyMoment(r);
-  }else{
-    pendingReadyMomentId=null;
-  }
-}
 function ringColor(s){
   if(s>=100) return "#16a34a";
   if(s<25) return "#d92d20";
@@ -97,7 +71,7 @@ function commentsHtml(list){
 function readinessText(r){const mi=r.inputs.filter(i=>!i.done).length, od=r.decisions.filter(d=>!d.decided).length;if(mi===0&&od===0)return"Alle wesentlichen Inputs und Entscheidungen sind geklärt. Der Request ist bereit für die Umsetzung.";return`Es fehlen noch ${mi} Input(s) und ${od} Entscheidungspunkt(e). Der Request sollte noch nicht in die Umsetzung gehen.`}
 function nextStep(r){const i=r.inputs.find(x=>!x.done),d=r.decisions.find(x=>!x.decided);if(i)return`${i.name} von ${i.owner} klären`;if(d)return`Entscheidung von ${d.owner} einholen`;return"Bereit zur Umsetzung"}
 
-function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("category").textContent=r.category;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);triggerReadyMomentIfNeeded(r,s);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
+function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("category").textContent=r.category;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
 function requestStatusClass(s){
   if(s>=100) return "status-ready";
   if(s>=75) return "status-high";
@@ -113,8 +87,20 @@ function requestBadgeClass(s){
 function renderRequestList(){$("requestList").innerHTML=state.requests.map(r=>{const s=score(r);return `<button class="request-item ${requestStatusClass(s)} ${r.id===currentId?"active":""}" onclick="selectRequest('${r.id}')"><div class="request-title"><span class="txt">${esc(r.title)}</span><span class="badge ${requestBadgeClass(s)}">${s}%</span></div><div class="request-meta txt">${esc(r.category)} · ${fmtDate(r.deadline)}</div></button>`}).join("")}
 function renderInputs(r){$("inputsTable").innerHTML=`<div class="row header"><div>Input</div><div>Status</div><div>Verantwortlich</div><div>Bereich</div><div></div></div>${r.inputs.map((i,idx)=>`<div class="row click ${i.done?"is-done":""}" onclick="openInputDetail(${idx})"><div class="name">${esc(i.name)}<span class="small">${esc(i.desc)}</span></div><div><div class="checkbox-label"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Erledigt":"Offen"}</span></div></div><div class="person"><div class="avatar">${initials(i.owner)}</div><div><strong>${esc(i.owner)}</strong></div></div><div class="small">${esc(i.dept)}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('input',${idx})">⋮</button><div class="action-menu" id="input-menu-${idx}"><button onclick="openInputDetail(${idx})">Bearbeiten</button><button class="danger" onclick="askDeleteInput(${idx})">Löschen</button></div></div></div>`).join("")}`}
 function renderDecisions(r){$("decisionList").innerHTML=r.decisions.map((d,idx)=>`<article class="decision ${d.decided?"is-done":""}" onclick="openDecisionDetail(${idx})"><div><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span></div><div><h3>${esc(d.question)}</h3><p>${esc(d.reason)}</p></div><div class="person"><div class="avatar">${initials(d.owner)}</div><div><strong>${esc(d.owner)}</strong></div></div><div><span class="badge ${d.decided?"green":"red"}">${d.decided?"Entschieden":"Offen"}</span></div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('decision',${idx})">⋮</button><div class="action-menu" id="decision-menu-${idx}"><button onclick="openDecisionDetail(${idx})">Bearbeiten</button><button class="danger" onclick="askDeleteDecision(${idx})">Löschen</button></div></div></article>`).join("")||`<p class="hint">Noch keine Entscheidungspunkte vorhanden.</p>`}
-function renderTimeline(r){$("timeline").innerHTML=r.log.slice().reverse().map((e,idx)=>`<div class="event"><div><span class="dot"></span>${idx===0?"Aktuell":"Früher"}</div><div>${esc(e)}</div><div class="small">Readyness</div></div>`).join("")}
-function renderAside(r){$("sideActivity").innerHTML=r.log.slice(-3).reverse().map(e=>`<div class="activity-item"><div class="avatar">R</div><div>${esc(e)}<div class="small">Gerade eben</div></div></div>`).join("");$("aiHint").textContent=readinessText(r);$("sideSteps").innerHTML=`<div>☐ ${esc(nextStep(r))}</div><div>☐ offene Inputs prüfen</div><div>☐ Entscheidungspunkte dokumentieren</div>`}
+function renderTimeline(r){
+  $("timeline").innerHTML=r.log.slice().reverse().map((entry,idx)=>{
+    const h=formatHistoryEntry(entry);
+    return `<div class="event"><div><span class="dot"></span>${idx===0?"Aktuell":"Früher"}</div><div><strong>${esc(h.user)}</strong><br>${esc(h.text)}${h.context?`<div class="small">${esc(h.context)}</div>`:""}</div><div class="small">${esc(h.time||"Readyness")}</div></div>`
+  }).join("")
+}
+function renderAside(r){
+  $("sideActivity").innerHTML=r.log.slice(-3).reverse().map(entry=>{
+    const h=formatHistoryEntry(entry);
+    return `<div class="activity-item"><div class="avatar">${initials(h.user)}</div><div>${esc(h.text)}${h.context?`<div class="small">${esc(h.context)}</div>`:""}<div class="small">${esc(h.time||"Gerade eben")}</div></div></div>`
+  }).join("");
+  $("aiHint").textContent=readinessText(r);
+  $("sideSteps").innerHTML=`<div>☐ ${esc(nextStep(r))}</div><div>☐ offene Inputs prüfen</div><div>☐ Entscheidungspunkte dokumentieren</div>`
+}
 function selectRequest(id){currentId=id;render()}
 
 function lockPageScroll(){document.body.classList.add("drawer-lock")}
@@ -160,11 +146,11 @@ function confirmDelete(){
   const r=current();
   if(deleteTarget.type==="input"){
     const removed=r.inputs.splice(deleteTarget.idx,1)[0];
-    r.log.push(`Input „${removed.name}“ wurde gelöscht.`);
+    addHistory("hat den Input gelöscht", removed.name);
   }
   if(deleteTarget.type==="decision"){
     const removed=r.decisions.splice(deleteTarget.idx,1)[0];
-    r.log.push(`Entscheidungspunkt „${removed.question}“ wurde gelöscht.`);
+    addHistory("hat den Entscheidungspunkt gelöscht", removed.question);
   }
   closeDeleteModal();
   render();
@@ -177,7 +163,6 @@ function closeInputModal(){
   if(modal) modal.classList.remove("open");
   activeInputIndex=null;
   unlockPageScroll();
-  flushPendingReadyMoment();
 }
 
 function renderInputDetail(i,idx){
@@ -290,10 +275,10 @@ function saveInput(event){
   const commit=()=>{
     if(activeInputIndex===null){
       r.inputs.push(data);
-      r.log.push(`Input „${data.name}“ wurde angelegt.`);
+      addHistory("hat den Input angelegt", data.name, data.desc);
     }else{
       r.inputs[activeInputIndex]=data;
-      r.log.push(`Input „${data.name}“ wurde bearbeitet.`);
+      addHistory("hat den Input bearbeitet", data.name, data.desc);
     }
     closeInputModal();
     render();
@@ -310,17 +295,17 @@ function toggleInputDone(idx){
   const i=current().inputs[idx];
   if(i.done){
     i.done=false;
-    current().log.push(`Input „${i.name}“ wurde wieder geöffnet.`);
+    addHistory("hat den Input wieder geöffnet", i.name);
     render();openInputDetail(idx);
     return;
   }
   askConfirmInputDone(()=>{
     i.done=true;
-    current().log.push(`Input „${i.name}“ wurde als erledigt markiert.`);
+    addHistory("hat den Input freigegeben", i.name);
     render();openInputDetail(idx);
   });
 }
-function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);current().log.push(`Kommentar zu Input „${i.name}“ hinzugefügt.`);render();openInputDetail(idx)}
+function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);addHistory("hat einen Kommentar zum Input ergänzt", i.name, val, i.owner);render();openInputDetail(idx)}
 
 function openDecisionCreate(){activeDecisionIndex=null;$("decisionModalTitle").textContent="Entscheidungspunkt anlegen";$("decisionModalSub").textContent="Eine Entscheidung braucht Frage, Begründung und Entscheider.";renderDecisionForm({question:"",reason:"",owner:"",decided:false,decision:"",comments:[]});$("decisionModal").classList.add("open");lockPageScroll()}
 function openDecisionDetail(idx){activeDecisionIndex=idx;const d=current().decisions[idx];$("decisionModalTitle").textContent=d.question;$("decisionModalSub").textContent="Entscheider dokumentieren, was entschieden wurde und warum.";renderDecisionDetail(d,idx);$("decisionModal").classList.add("open");lockPageScroll()}
@@ -372,7 +357,6 @@ function renderDecisionDetail(d,idx){$("decisionModalBody").innerHTML=`<div clas
 function closeDecisionModal(){
   $("decisionModal").classList.remove("open");
   unlockPageScroll();
-  flushPendingReadyMoment();
 }
 function saveDecision(){
   if(!validateDecisionForm(true))return;
@@ -387,7 +371,7 @@ function saveDecision(){
     comments:activeDecisionIndex===null?[]:(current().decisions[activeDecisionIndex].comments||[])
   };
   const r=current();
-  if(activeDecisionIndex===null){r.decisions.push(data);r.log.push(`Entscheidungspunkt „${q}“ wurde angelegt.`)}else{r.decisions[activeDecisionIndex]=data;r.log.push(`Entscheidungspunkt „${q}“ wurde bearbeitet.`)}
+  if(activeDecisionIndex===null){r.decisions.push(data);addHistory("hat einen Entscheidungspunkt angelegt", q, reason)}else{r.decisions[activeDecisionIndex]=data;addHistory("hat den Entscheidungspunkt bearbeitet", q, reason)}
   closeDecisionModal();render()
 }
 function saveDecisionResult(idx){
@@ -406,10 +390,7 @@ function saveDecisionResult(idx){
 
   resultEl.classList.remove("invalid");
   d.decision=val;
-  current().log.push(d.decided
-    ? `Entscheidung „${d.question}“ wurde dokumentiert.`
-    : `Offener Entscheidungspunkt „${d.question}“ wurde gespeichert.`
-  );
+  addHistory(d.decided ? "hat die Entscheidung dokumentiert" : "hat den offenen Entscheidungspunkt gespeichert", d.question, val);
   closeDecisionModal();render()
 }
 function toggleDecision(idx){
@@ -417,7 +398,7 @@ function toggleDecision(idx){
   if(d.decided){
     d.decided=false;
     d.decision="";
-    current().log.push(`Entscheidungspunkt „${d.question}“ wurde wieder geöffnet.`);
+    addHistory("hat den Entscheidungspunkt wieder geöffnet", d.question);
     render();openDecisionDetail(idx);
     return;
   }
@@ -430,10 +411,10 @@ function toggleDecision(idx){
   }
   d.decision=val;
   d.decided=true;
-  current().log.push(`Entscheidungspunkt „${d.question}“ wurde als entschieden markiert.`);
+  addHistory("hat den Entscheidungspunkt entschieden", d.question, val);
   render();openDecisionDetail(idx)
 }
-function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return;}const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);current().log.push(`Kommentar zu Entscheidungspunkt hinzugefügt.`);render();openDecisionDetail(idx)}
+function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return;}const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);addHistory("hat einen Kommentar zum Entscheidungspunkt ergänzt", d.question, val, d.owner);render();openDecisionDetail(idx)}
 
 const inputConfirmQuestions=[
   "Hand aufs Herz: Ist das wirklich vollständig?",
@@ -467,11 +448,11 @@ function confirmInputDone(){
 function openRequestModal(){editingRequest=false;$("requestModalTitle").textContent="Neue Anfrage";$("reqTitle").value="";$("reqCategory").value="Verpackung";$("reqCreatedBy").value="Sascha Boss";$("reqDeadline").value="";$("reqDesc").value="";$("requestModal").classList.add("open")}
 function editCurrent(){const r=current();editingRequest=true;$("requestModalTitle").textContent="Anfrage bearbeiten";$("reqTitle").value=r.title;$("reqCategory").value=r.category;$("reqCreatedBy").value=r.createdBy;$("reqDeadline").value=r.deadline;$("reqDesc").value=r.description;$("requestModal").classList.add("open")}
 function closeRequestModal(){$("requestModal").classList.remove("open")}
-function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintragen.");return}if(editingRequest){Object.assign(current(),{title:$("reqTitle").value,category:$("reqCategory").value,createdBy:$("reqCreatedBy").value,deadline:$("reqDeadline").value,description:$("reqDesc").value});current().log.push("Anfragedetails wurden bearbeitet.")}else{const id="REQ-"+new Date().getFullYear()+"-"+String(Math.floor(Math.random()*900)+100);state.requests.push({id,title:$("reqTitle").value,description:$("reqDesc").value,createdBy:$("reqCreatedBy").value,createdAt:new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"}),category:$("reqCategory").value,deadline:$("reqDeadline").value,inputs:[],decisions:[],log:["Request wurde erstellt."]});currentId=id}closeRequestModal();render()}
+function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintragen.");return}if(editingRequest){Object.assign(current(),{title:$("reqTitle").value,category:$("reqCategory").value,createdBy:$("reqCreatedBy").value,deadline:$("reqDeadline").value,description:$("reqDesc").value});addHistory("hat die Anfragedetails bearbeitet", current().title)}else{const id="REQ-"+new Date().getFullYear()+"-"+String(Math.floor(Math.random()*900)+100);state.requests.push({id,title:$("reqTitle").value,description:$("reqDesc").value,createdBy:$("reqCreatedBy").value,createdAt:new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"}),category:$("reqCategory").value,deadline:$("reqDeadline").value,inputs:[],decisions:[],log:[historyEntry($("reqCreatedBy").value||currentUser(),"hat den Request erstellt",$("reqTitle").value,"Neue Anfrage angelegt.")]});currentId=id}closeRequestModal();render()}
 function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){openInputDetail(inputIndex);toast("Bitte Input bewusst abschließen.");return}const decisionIndex=r.decisions.findIndex(x=>!x.decided);if(decisionIndex>=0){toast("Entscheidungen brauchen zuerst eine begründete Dokumentation.");openDecisionDetail(decisionIndex);return}toast("Request ist bereits bereit.")}
 function addLog(text){current().log.push(text);render()}
 function toggleSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.add("open");b.classList.add("open");lockPageScroll()}
-function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll();flushPendingReadyMoment()}
+function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll()}
 function toggleDocumentation(){
   const body=$("documentationBody");
   const label=$("documentationToggleLabel");
