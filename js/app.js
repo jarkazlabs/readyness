@@ -1,4 +1,4 @@
-const STORAGE_KEY = "readyness-prototype-v17";
+const STORAGE_KEY = "readyness-prototype-v18";
 let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
 
 const mockUsers=[
@@ -139,31 +139,39 @@ function renderInputForm(i){
   $("inputModalTitle").textContent=isCreate?"Input anlegen":"Input bearbeiten";
   $("inputModalSub").textContent=isCreate?"Der Ersteller definiert den organisatorischen Rahmen.":"Der organisatorische Rahmen dieses Inputs.";
   $("inputModalBody").innerHTML=`
-    <section class="drawer-card form-card primary-form-card">
-      <div class="drawer-card-title"><span class="mini-icon">▤</span><label>GRUNDLAGEN</label></div>
-      <div class="refined-form-grid">
-        <div class="field"><label>Name</label><input id="inputName" placeholder="z. B. Verpackungsbasis" value="${esc(i.name)}"></div>
-        <div class="field"><label>Verantwortlich</label><select id="inputOwner">${userOptions(i.owner||"Sascha Boss")}</select></div>
-        <div class="field"><label>Bereich</label><select id="inputDept"><option>Einkauf</option><option>GF</option><option>Vertrieb</option><option>Marketing</option><option>Produktion</option></select></div>
-        <div class="field"><label>Status</label><select id="inputDone"><option value="false">Offen</option><option value="true">Erledigt</option></select></div>
-      </div>
-    </section>
-    <section class="drawer-card form-card">
-      <div class="drawer-card-title"><span class="mini-icon">◎</span><label>KONTEXT</label></div>
-      <div class="field"><label>Beschreibung</label><textarea class="compact-textarea" id="inputDesc" placeholder="Welche Information wird benötigt? Warum ist sie für die Klärung relevant?">${esc(i.desc)}</textarea></div>
-      <p class="form-help">Ein Input ist keine Aufgabe. Er beschreibt eine fehlende Information, die eine andere Person liefern oder bestätigen muss.</p>
-    </section>`;
-  $("inputModalActions").innerHTML=`<button type="button" class="secondary" id="cancelInputBtn">Abbrechen</button><button type="button" class="primary" id="saveInputBtn">Input speichern</button>`;
-  setTimeout(()=>{
-    if($("inputDone")) $("inputDone").value=String(i.done);
-    if($("inputDept")) $("inputDept").value=i.dept||"Marketing";
-    if($("saveInputBtn")) $("saveInputBtn").addEventListener("click", saveInput);
-    if($("cancelInputBtn")) $("cancelInputBtn").addEventListener("click", closeInputModal);
-  },0)
+    <form id="inputCreateForm" class="drawer-form" novalidate>
+      <section class="drawer-card form-card primary-form-card">
+        <div class="drawer-card-title"><span class="mini-icon">▤</span><label>GRUNDLAGEN</label></div>
+        <div class="refined-form-grid">
+          <div class="field"><label for="inputName">Name</label><input id="inputName" name="inputName" autocomplete="off" placeholder="z. B. Verpackungsbasis" value="${esc(i.name)}"><p class="field-error" id="inputNameError" aria-live="polite"></p></div>
+          <div class="field"><label for="inputOwner">Verantwortlich</label><select id="inputOwner" name="inputOwner">${userOptions(i.owner||"Sascha Boss")}</select></div>
+          <div class="field"><label for="inputDept">Bereich</label><select id="inputDept" name="inputDept"><option>Einkauf</option><option>GF</option><option>Vertrieb</option><option>Marketing</option><option>Produktion</option></select></div>
+          <div class="field"><label for="inputDone">Status</label><select id="inputDone" name="inputDone"><option value="false">Offen</option><option value="true">Erledigt</option></select></div>
+        </div>
+      </section>
+      <section class="drawer-card form-card">
+        <div class="drawer-card-title"><span class="mini-icon">◎</span><label>KONTEXT</label></div>
+        <div class="field"><label for="inputDesc">Beschreibung</label><textarea class="compact-textarea" id="inputDesc" name="inputDesc" placeholder="Welche Information wird benötigt? Warum ist sie für die Klärung relevant?">${esc(i.desc)}</textarea></div>
+        <p class="form-help">Ein Input ist keine Aufgabe. Er beschreibt eine fehlende Information, die eine andere Person liefern oder bestätigen muss.</p>
+      </section>
+    </form>`;
+  $("inputModalActions").innerHTML=`<button type="button" class="secondary" id="cancelInputBtn">Abbrechen</button><button type="button" class="primary" id="saveInputBtn" onclick="saveInput(event)">Input speichern</button>`;
+
+  if($("inputDone")) $("inputDone").value=String(i.done);
+  if($("inputDept")) $("inputDept").value=i.dept||"Marketing";
+  if($("cancelInputBtn")) $("cancelInputBtn").onclick=closeInputModal;
+  if($("inputCreateForm")) $("inputCreateForm").onsubmit=saveInput;
+  if($("inputName")){
+    $("inputName").oninput=()=>{
+      $("inputName").classList.remove("invalid");
+      if($("inputNameError")) $("inputNameError").textContent="";
+    };
+  }
 }
-function saveInput(){
+function saveInput(event){
+  if(event){event.preventDefault();event.stopPropagation();}
   const nameEl=$("inputName"), ownerEl=$("inputOwner"), deptEl=$("inputDept"), descEl=$("inputDesc"), doneEl=$("inputDone");
-  if(!nameEl||!ownerEl||!deptEl||!descEl||!doneEl){toast("Das Input-Formular ist nicht vollständig geladen.");return}
+  if(!nameEl||!ownerEl||!deptEl||!descEl||!doneEl){toast("Das Input-Formular ist nicht vollständig geladen.");return false}
   const existingComments=activeInputIndex===null?[]:((current().inputs[activeInputIndex]||{}).comments||[]);
   const data={
     name:nameEl.value.trim(),
@@ -173,8 +181,14 @@ function saveInput(){
     done:doneEl.value==="true",
     comments:existingComments
   };
-  if(!data.name){toast("Bitte einen Namen für den Input eintragen.");nameEl.focus();return}
-  if(data.done&&!hasValidInputComment(data)){toast("Zum Erledigen ist mindestens ein Kommentar mit 15 Zeichen nötig.");doneEl.focus();return}
+  if(!data.name){
+    nameEl.classList.add("invalid");
+    if($("inputNameError")) $("inputNameError").textContent="Bitte einen Namen für den Input eintragen.";
+    toast("Bitte einen Namen für den Input eintragen.");
+    nameEl.focus();
+    return false
+  }
+  if(data.done&&!hasValidInputComment(data)){toast("Zum Erledigen ist mindestens ein Kommentar mit 15 Zeichen nötig.");doneEl.focus();return false}
   const r=current();
   if(activeInputIndex===null){
     r.inputs.push(data);
@@ -186,6 +200,7 @@ function saveInput(){
   closeInputModal();
   render();
   toast("Input gespeichert");
+  return false
 }
 function toggleInputDone(idx){const i=current().inputs[idx];if(!i.done && !hasValidInputComment(i)){toast("Bitte zuerst einen Kommentar mit mindestens 15 Zeichen ergänzen.");return}i.done=!i.done;current().log.push(`Input „${i.name}“ wurde als ${i.done?"erledigt":"offen"} markiert.`);render();openInputDetail(idx)}
 function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);current().log.push(`Kommentar zu Input „${i.name}“ hinzugefügt.`);render();openInputDetail(idx)}
@@ -205,20 +220,43 @@ function renderDecisionForm(d){
       <div class="field"><label>Finale Entscheidung</label><textarea class="compact-textarea" id="decisionText" placeholder="Mindestens ein vollständiger Satz mit drei Wörtern.">${esc(d.decision||"")}</textarea><span class="warn" id="decisionTextWarn">Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.</span></div>
     </section>`;
   $("decisionModalActions").innerHTML=`<button class="secondary" onclick="closeDecisionModal()">Abbrechen</button><button class="primary" onclick="saveDecision()">Speichern</button>`;
-  setTimeout(()=>{$("decisionDone").value=String(d.decided)},0)
+  setTimeout(()=>{
+    $("decisionDone").value=String(d.decided);
+    bindDecisionFormValidation();
+    validateDecisionForm(false);
+  },0)
+}
+function validateDecisionForm(showWarnings=true){
+  const questionEl=$("decisionQuestion"), reasonEl=$("decisionReason"), textEl=$("decisionText"), doneEl=$("decisionDone");
+  if(!questionEl||!reasonEl||!textEl||!doneEl)return true;
+  const q=questionEl.value.trim();
+  const reason=reasonEl.value.trim();
+  const decisionText=textEl.value.trim();
+  const decided=doneEl.value==="true";
+  const qOk=q.split(/\s+/).filter(Boolean).length>=6&&q.endsWith("?");
+  const rOk=reason.split(/\s+/).filter(Boolean).length>=8;
+  const decisionOk=!decided||isSentenceWithThreeWords(decisionText);
+  [[questionEl,"questionWarn",qOk],[reasonEl,"reasonWarn",rOk],[textEl,"decisionTextWarn",decisionOk]].forEach(([el,warnId,ok])=>{
+    const warn=$(warnId);
+    el.classList.toggle("invalid",showWarnings&&!ok);
+    if(warn)warn.classList.toggle("show",showWarnings&&!ok);
+  });
+  return qOk&&rOk&&decisionOk;
+}
+function bindDecisionFormValidation(){
+  ["decisionQuestion","decisionReason","decisionText"].forEach(id=>{
+    const el=$(id);
+    if(el)el.addEventListener("input",()=>validateDecisionForm(true));
+  });
+  const doneEl=$("decisionDone");
+  if(doneEl)doneEl.addEventListener("change",()=>validateDecisionForm(true));
 }
 function renderDecisionDetail(d,idx){$("decisionModalBody").innerHTML=`<div class="drawer-meta-grid"><div class="drawer-meta-item"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><div><label>Status</label><strong>${d.decided?"Entschieden":"Offen"}</strong><div class="small">Finale Entscheidung dokumentieren.</div></div></div><div class="drawer-meta-item"><div class="avatar">${initials(d.owner)}</div><div><label>Entscheider</label><strong>${esc(d.owner)}</strong><div class="small">${esc(userRole(d.owner)||"Entscheidungsverantwortung")}</div></div></div><div class="drawer-meta-item"><div class="readyness-impact">▥</div><div><label>Readyness-Beitrag</label><strong>Sehr hoch</strong><div class="small">Kritischer Entscheidungspunkt</div></div></div></div><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">⚖</span><label>ENTSCHEIDUNG</label></div><label class="small" style="font-weight:500;color:#344054">Entscheidungsfrage</label><div class="drawer-text-box decision-question-box">${esc(d.question)}</div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Begründung / Kontext</label><div class="drawer-text-box">${esc(d.reason||"Noch keine Begründung hinterlegt.")}</div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Finale Entscheidung</label><textarea class="drawer-textarea" id="decisionResult" placeholder="Beschreibe die Entscheidung in vollständigen Sätzen.">${esc(d.decision||"")}</textarea></section><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">☰</span><label>KOMMUNIKATION</label></div><label class="small" style="font-weight:500;color:#344054">Kommentar / Begründung zur Entscheidung</label><div class="drawer-comment-form"><div><textarea class="drawer-textarea" id="decisionComment" placeholder="Warum wurde so entschieden? Was sind die nächsten Schritte?"></textarea><div class="char-count">Kontext für spätere Nachvollziehbarkeit</div></div><button class="secondary" onclick="addDecisionComment(${idx})">Kommentieren</button></div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Verlauf & Kommentare</label><div class="comment-box">${commentsHtml(d.comments)}</div></section><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">✓</span><label>ABSCHLUSS</label></div><div class="drawer-done-row"><div><strong>${d.decided?"Diese Entscheidung ist dokumentiert.":"Entscheidung abschließen"}</strong><div class="small">Eine finale Entscheidung schafft organisatorische Verbindlichkeit.</div></div><button class="secondary" onclick="toggleDecision(${idx})"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><span>${d.decided?"Wieder öffnen":"Als entschieden markieren"}</span></button></div></section>`;$("decisionModalActions").innerHTML=`<button class="secondary" onclick="renderDecisionForm(current().decisions[${idx}])">Struktur bearbeiten</button><button class="primary" onclick="saveDecisionResult(${idx})">Entscheidung speichern</button>`}
 function closeDecisionModal(){$("decisionModal").classList.remove("open");unlockPageScroll()}
 function saveDecision(){
+  if(!validateDecisionForm(true))return;
   const q=$("decisionQuestion").value.trim(),reason=$("decisionReason").value.trim(),decisionText=$("decisionText").value.trim();
-  const qOk=q.split(/\s+/).length>=6&&q.endsWith("?");
-  const rOk=reason.split(/\s+/).length>=8;
   const decided=$("decisionDone").value==="true";
-  const decisionOk=!decided || isSentenceWithThreeWords(decisionText);
-  $("questionWarn").classList.toggle("show",!qOk);
-  $("reasonWarn").classList.toggle("show",!rOk);
-  if($("decisionTextWarn")) $("decisionTextWarn").classList.toggle("show",!decisionOk);
-  if(!qOk||!rOk||!decisionOk)return;
   const data={question:q,reason,owner:$("decisionOwner").value||"Noch nicht zugewiesen",decided,decision:decisionText,comments:activeDecisionIndex===null?[]:(current().decisions[activeDecisionIndex].comments||[])};
   const r=current();
   if(activeDecisionIndex===null){r.decisions.push(data);r.log.push(`Entscheidungspunkt „${q}“ wurde angelegt.`)}else{r.decisions[activeDecisionIndex]=data;r.log.push(`Entscheidungspunkt „${q}“ wurde bearbeitet.`)}

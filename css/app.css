@@ -246,3 +246,17 @@ body{font-size:15px}
 .field textarea.compact-textarea{min-height:118px;line-height:1.5}
 .form-help{margin:0;color:var(--muted);font-size:14px;line-height:1.55;background:rgba(247,248,252,.8);border:1px solid var(--line);border-radius:15px;padding:12px 14px}
 @media(max-width:760px){.refined-form-grid{grid-template-columns:1fr}}
+
+.field-error{
+  min-height:18px;
+  margin:8px 0 0;
+  color:#d92d20;
+  font-size:0.9rem;
+  font-weight:500;
+}
+input.invalid,
+textarea.invalid,
+select.invalid{
+  border-color:#f04438 !important;
+  box-shadow:0 0 0 4px rgba(240,68,56,.10) !important;
+}
