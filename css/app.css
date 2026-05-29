@@ -333,3 +333,38 @@ select.invalid{
   from{opacity:0;transform:translateY(4px) scale(.985)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
+
+/* Readyness v29: align refined create/edit form fields */
+.refined-form-grid{
+  align-items:start;
+}
+.refined-form-grid > .field{
+  align-self:start;
+  align-content:start;
+  align-items:stretch;
+  gap:8px;
+  min-width:0;
+}
+.refined-form-grid > .field label{
+  margin:0;
+  line-height:1.25;
+}
+.refined-form-grid > .field input,
+.refined-form-grid > .field select{
+  box-sizing:border-box;
+  width:100%;
+  height:58px;
+  min-height:58px;
+  line-height:1.25;
+}
+.refined-form-grid > .field select{
+  display:block;
+}
+.refined-form-grid > .field .field-error:empty{
+  min-height:0;
+  margin:0;
+}
+.refined-form-grid > .field .field-error:not(:empty){
+  min-height:18px;
+  margin:4px 0 0;
+}
