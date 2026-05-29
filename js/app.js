@@ -1,4 +1,4 @@
-const STORAGE_KEY = "readyness-prototype-v18";
+const STORAGE_KEY = "readyness-prototype-v20";
 let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
 
 const mockUsers=[
