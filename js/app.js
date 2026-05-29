@@ -1,4 +1,4 @@
-const STORAGE_KEY = "readyness-prototype-v20";
+const STORAGE_KEY = "readyness-prototype-v21";
 let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
 
 const mockUsers=[
@@ -130,6 +130,64 @@ function confirmDelete(){
   closeDeleteModal();
   render();
   toast("Eintrag gelöscht");
+}
+
+
+function closeInputModal(){
+  const modal=$("inputModal");
+  if(modal) modal.classList.remove("open");
+  activeInputIndex=null;
+  unlockPageScroll();
+}
+
+function renderInputDetail(i,idx){
+  const canComplete=hasValidInputComment(i);
+  $("inputModalTitle").textContent=i.name||"Input";
+  $("inputModalSub").textContent="Der Verantwortliche ergänzt Informationen, Kommentare oder relevante Kontextdateien.";
+  $("inputModalBody").innerHTML=`
+    <div class="drawer-meta-grid">
+      <div class="drawer-meta-item">
+        <span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span>
+        <div><label>Status</label><strong>${i.done?"Erledigt":"Offen"}</strong><div class="small">${i.done?"Information liegt vor.":"Information wird noch benötigt."}</div></div>
+      </div>
+      <div class="drawer-meta-item">
+        <div class="avatar">${initials(i.owner)}</div>
+        <div><label>Verantwortlich</label><strong>${esc(i.owner||"Nicht zugewiesen")}</strong><div class="small">${esc(i.dept||userRole(i.owner)||"Bereich offen")}</div></div>
+      </div>
+      <div class="drawer-meta-item">
+        <div class="readyness-impact">▥</div>
+        <div><label>Readyness-Beitrag</label><strong>${i.done?"Geklärt":"Offen"}</strong><div class="small">Kontext für die Anfrage</div></div>
+      </div>
+    </div>
+
+    <section class="drawer-card">
+      <div class="drawer-card-title"><span class="mini-icon">◎</span><label>KONTEXT</label></div>
+      <label class="small" style="font-weight:500;color:#344054">Benötigte Information</label>
+      <div class="drawer-text-box">${esc(i.desc||"Noch keine Beschreibung hinterlegt.")}</div>
+      <div class="upload-zone">
+        <div><strong>Kontextdateien</strong><div class="small">Screenshots, PDFs oder Produktdaten können später hier ergänzt werden.</div><button type="button" onclick="toast('Upload ist im Prototyp noch nicht aktiv.')">Datei auswählen</button></div>
+      </div>
+    </section>
+
+    <section class="drawer-card">
+      <div class="drawer-card-title"><span class="mini-icon">☰</span><label>KOMMUNIKATION</label></div>
+      <label class="small" style="font-weight:500;color:#344054">Kommentar / Kontext ergänzen</label>
+      <div class="drawer-comment-form">
+        <div><textarea class="drawer-textarea" id="inputComment" placeholder="Welche Information lieferst du? Was muss später nachvollziehbar sein?"></textarea><div class="char-count">Mindestens 15 Zeichen, wenn der Input erledigt werden soll.</div></div>
+        <button type="button" class="secondary" onclick="addInputComment(${idx})">Kommentieren</button>
+      </div>
+      <label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Verlauf & Kommentare</label>
+      <div class="comment-box">${commentsHtml(i.comments)}</div>
+    </section>
+
+    <section class="drawer-card">
+      <div class="drawer-card-title"><span class="mini-icon">✓</span><label>ABSCHLUSS</label></div>
+      <div class="drawer-done-row">
+        <div><strong>${i.done?"Dieser Input ist geklärt.":"Input abschließen"}</strong><div class="small">Zum Abschließen ist mindestens ein Kommentar mit 15 Zeichen nötig.</div></div>
+        <button type="button" class="secondary" onclick="toggleInputDone(${idx})" ${(!i.done&&!canComplete)?"title='Bitte zuerst einen Kommentar ergänzen'":""}><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Wieder öffnen":"Als erledigt markieren"}</span></button>
+      </div>
+    </section>`;
+  $("inputModalActions").innerHTML=`<button type="button" class="secondary" onclick="renderInputForm(current().inputs[${idx}])">Struktur bearbeiten</button><button type="button" class="primary" onclick="closeInputModal()">Schließen</button>`;
 }
 
 function openInputCreate(){activeInputIndex=null;$("inputModalTitle").textContent="Input anlegen";$("inputModalSub").textContent="Der Ersteller definiert den organisatorischen Rahmen.";renderInputForm({name:"",owner:"",dept:"",desc:"",done:false,comments:[]});$("inputModal").classList.add("open");lockPageScroll()}
