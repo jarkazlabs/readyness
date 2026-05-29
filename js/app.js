@@ -328,12 +328,25 @@ function saveDecision(){
   closeDecisionModal();render()
 }
 function saveDecisionResult(idx){
-  const val=$("decisionResult").value.trim();
-  if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return}
+  const resultEl=$("decisionResult");
+  const val=resultEl.value.trim();
   const d=current().decisions[idx];
+
+  // Offen gespeicherte Entscheidungen dürfen ohne finale Begründung gespeichert werden.
+  // Kontext wird erst zwingend, wenn die Entscheidung wirklich als entschieden markiert ist.
+  if(d.decided && !isSentenceWithThreeWords(val)){
+    resultEl.classList.add("invalid");
+    resultEl.focus();
+    toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");
+    return;
+  }
+
+  resultEl.classList.remove("invalid");
   d.decision=val;
-  d.decided=true;
-  current().log.push(`Entscheidung „${d.question}“ wurde dokumentiert.`);
+  current().log.push(d.decided
+    ? `Entscheidung „${d.question}“ wurde dokumentiert.`
+    : `Offener Entscheidungspunkt „${d.question}“ wurde gespeichert.`
+  );
   closeDecisionModal();render()
 }
 function toggleDecision(idx){
