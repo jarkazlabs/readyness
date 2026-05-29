@@ -1,4 +1,4 @@
-const STORAGE_KEY = "readyness-prototype-v27";
+const STORAGE_KEY = "readyness-prototype-v28";
 let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
 
 const mockUsers=[
@@ -159,6 +159,7 @@ function confirmDelete(){
 
 
 function closeInputModal(){
+  closeInputConfirm();
   const modal=$("inputModal");
   if(modal) modal.classList.remove("open");
   activeInputIndex=null;
@@ -208,7 +209,7 @@ function renderInputDetail(i,idx){
       <div class="drawer-card-title"><span class="mini-icon">✓</span><label>ABSCHLUSS</label></div>
       <div class="drawer-done-row">
         <div><strong>${i.done?"Dieser Input ist geklärt.":"Input abschließen"}</strong><div class="small">Beim Abschließen fragt Readyness kurz nach, ob wirklich nichts fehlt.</div></div>
-        <button type="button" class="secondary" onclick="toggleInputDone(${idx})"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Wieder öffnen":"Als erledigt markieren"}</span></button>
+        <button type="button" class="secondary" onclick="toggleInputDone(${idx}, this)"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Wieder öffnen":"Als erledigt markieren"}</span></button>
       </div>
     </section>`;
   $("inputModalActions").innerHTML=`<button type="button" class="secondary" onclick="renderInputForm(current().inputs[${idx}])">Struktur bearbeiten</button><button type="button" class="primary" onclick="closeInputModal()">Schließen</button>`;
@@ -285,13 +286,13 @@ function saveInput(event){
     toast("Input gespeichert");
   };
   if(data.done&&!wasDone){
-    askConfirmInputDone(commit);
+    askConfirmInputDone(commit, event?.currentTarget || $("saveInputBtn"));
     return false;
   }
   commit();
   return false
 }
-function toggleInputDone(idx){
+function toggleInputDone(idx, anchorEl){
   const i=current().inputs[idx];
   if(i.done){
     i.done=false;
@@ -303,7 +304,7 @@ function toggleInputDone(idx){
     i.done=true;
     addHistory("hat den Input freigegeben", i.name);
     render();openInputDetail(idx);
-  });
+  }, anchorEl);
 }
 function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);addHistory("hat einen Kommentar zum Input ergänzt", i.name, val, i.owner);render();openInputDetail(idx)}
 
@@ -425,24 +426,44 @@ const inputConfirmQuestions=[
   "Hat diese Info genug Substanz für den nächsten Schritt?",
   "Wenn dich nächste Woche jemand fragt: weißt du dann noch, warum?"
 ];
-function askConfirmInputDone(callback){
+function positionInputConfirm(anchorEl){
+  const popover=$("inputConfirmPopover");
+  if(!popover)return;
+  const rect=anchorEl?.getBoundingClientRect ? anchorEl.getBoundingClientRect() : null;
+  const popoverWidth=340;
+  const gap=12;
+  let top=window.innerHeight/2-80;
+  let left=window.innerWidth/2-popoverWidth/2;
+  let placement="center";
+  if(rect){
+    top=rect.top + rect.height/2 - 80;
+    left=rect.left - popoverWidth - gap;
+    placement="left";
+    if(left<16){
+      left=Math.min(window.innerWidth-popoverWidth-16, rect.right+gap);
+      placement="right";
+    }
+    top=Math.max(16, Math.min(top, window.innerHeight - 190));
+  }
+  popover.style.top=`${top}px`;
+  popover.style.left=`${left}px`;
+  popover.dataset.placement=placement;
+}
+function askConfirmInputDone(callback, anchorEl){
   pendingInputAction=callback;
   const q=inputConfirmQuestions[Math.floor(Math.random()*inputConfirmQuestions.length)];
   if($("inputConfirmQuestion"))$("inputConfirmQuestion").textContent=q;
-  if($("inputConfirmModal"))$("inputConfirmModal").classList.add("open");
-  lockPageScroll();
+  positionInputConfirm(anchorEl);
+  if($("inputConfirmPopover"))$("inputConfirmPopover").classList.add("open");
 }
 function closeInputConfirm(){
-  if($("inputConfirmModal"))$("inputConfirmModal").classList.remove("open");
+  if($("inputConfirmPopover"))$("inputConfirmPopover").classList.remove("open");
   pendingInputAction=null;
-  unlockPageScroll();
 }
 function confirmInputDone(){
   const action=pendingInputAction;
-  if($("inputConfirmModal"))$("inputConfirmModal").classList.remove("open");
-  pendingInputAction=null;
+  closeInputConfirm();
   if(typeof action==="function")action();
-  unlockPageScroll();
 }
 
 function openRequestModal(){editingRequest=false;$("requestModalTitle").textContent="Neue Anfrage";$("reqTitle").value="";$("reqCategory").value="Verpackung";$("reqCreatedBy").value="Sascha Boss";$("reqDeadline").value="";$("reqDesc").value="";$("requestModal").classList.add("open")}
@@ -465,5 +486,14 @@ document.addEventListener("input",(event)=>{
     event.target.classList.remove("invalid");
   }
 });
+
+document.addEventListener("click",(event)=>{
+  const popover=$("inputConfirmPopover");
+  if(!popover?.classList.contains("open"))return;
+  if(event.target.closest("#inputConfirmPopover"))return;
+  if(event.target.closest("button"))return;
+  closeInputConfirm();
+});
+window.addEventListener("resize",closeInputConfirm);
 
 load();render();
