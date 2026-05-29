@@ -1,5 +1,5 @@
 const STORAGE_KEY = "readyness-prototype-v21";
-let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
+let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null,pendingReadyMomentId=null;
 
 const mockUsers=[
   {name:"Sascha Boss",role:"Marketing"},
@@ -35,10 +35,17 @@ function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
 function score(r){const total=r.inputs.length+r.decisions.length;if(!total)return 0;return Math.round(((r.inputs.filter(i=>i.done).length+r.decisions.filter(d=>d.decided).length)/total)*100)}
 function readyMomentKey(id){return `readyness-ready-moment-${id}`}
-function triggerReadyMomentIfNeeded(r,s){
-  if(s!==100)return;
-  if(localStorage.getItem(readyMomentKey(r.id))==="seen")return;
+function isAnyDrawerOpen(){
+  return Boolean(
+    $("inputModal")?.classList.contains("open") ||
+    $("decisionModal")?.classList.contains("open") ||
+    $("aside")?.classList.contains("open")
+  );
+}
+function launchReadyMoment(r){
+  if(!r || localStorage.getItem(readyMomentKey(r.id))==="seen")return;
   localStorage.setItem(readyMomentKey(r.id),"seen");
+  pendingReadyMomentId=null;
   setTimeout(()=>{
     const ring=$("ring");
     if(!ring)return;
@@ -46,7 +53,25 @@ function triggerReadyMomentIfNeeded(r,s){
     void ring.offsetWidth;
     ring.classList.add("rocket-launching");
     setTimeout(()=>ring.classList.remove("rocket-launching"),2800);
-  },260);
+  },220);
+}
+function triggerReadyMomentIfNeeded(r,s){
+  if(s!==100)return;
+  if(localStorage.getItem(readyMomentKey(r.id))==="seen")return;
+  if(isAnyDrawerOpen()){
+    pendingReadyMomentId=r.id;
+    return;
+  }
+  launchReadyMoment(r);
+}
+function flushPendingReadyMoment(){
+  if(!pendingReadyMomentId || isAnyDrawerOpen())return;
+  const r=state.requests.find(req=>req.id===pendingReadyMomentId);
+  if(r && score(r)===100){
+    launchReadyMoment(r);
+  }else{
+    pendingReadyMomentId=null;
+  }
 }
 function ringColor(s){
   if(s>=100) return "#16a34a";
@@ -152,6 +177,7 @@ function closeInputModal(){
   if(modal) modal.classList.remove("open");
   activeInputIndex=null;
   unlockPageScroll();
+  flushPendingReadyMoment();
 }
 
 function renderInputDetail(i,idx){
@@ -343,7 +369,11 @@ function bindDecisionFormValidation(){
   if(doneEl)doneEl.addEventListener("change",()=>validateDecisionForm(true));
 }
 function renderDecisionDetail(d,idx){$("decisionModalBody").innerHTML=`<div class="drawer-meta-grid"><div class="drawer-meta-item"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><div><label>Status</label><strong>${d.decided?"Entschieden":"Offen"}</strong><div class="small">Finale Entscheidung dokumentieren.</div></div></div><div class="drawer-meta-item"><div class="avatar">${initials(d.owner)}</div><div><label>Entscheider</label><strong>${esc(d.owner)}</strong><div class="small">${esc(userRole(d.owner)||"Entscheidungsverantwortung")}</div></div></div><div class="drawer-meta-item"><div class="readyness-impact">▥</div><div><label>Readyness-Beitrag</label><strong>Sehr hoch</strong><div class="small">Kritischer Entscheidungspunkt</div></div></div></div><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">⚖</span><label>ENTSCHEIDUNG</label></div><label class="small" style="font-weight:500;color:#344054">Entscheidungsfrage</label><div class="drawer-text-box decision-question-box">${esc(d.question)}</div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Begründung / Kontext</label><div class="drawer-text-box">${esc(d.reason||"Noch keine Begründung hinterlegt.")}</div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Finale Entscheidung</label><textarea class="drawer-textarea" id="decisionResult" placeholder="Beschreibe die Entscheidung in vollständigen Sätzen.">${esc(d.decision||"")}</textarea></section><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">☰</span><label>KOMMUNIKATION</label></div><label class="small" style="font-weight:500;color:#344054">Kommentar / Begründung zur Entscheidung</label><div class="drawer-comment-form"><div><textarea class="drawer-textarea" id="decisionComment" placeholder="Warum wurde so entschieden? Was sind die nächsten Schritte?"></textarea><div class="char-count">Kontext für spätere Nachvollziehbarkeit</div></div><button class="secondary" onclick="addDecisionComment(${idx})">Kommentieren</button></div><label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Verlauf & Kommentare</label><div class="comment-box">${commentsHtml(d.comments)}</div></section><section class="drawer-card"><div class="drawer-card-title"><span class="mini-icon">✓</span><label>ABSCHLUSS</label></div><div class="drawer-done-row"><div><strong>${d.decided?"Diese Entscheidung ist dokumentiert.":"Entscheidung abschließen"}</strong><div class="small">Eine finale Entscheidung schafft organisatorische Verbindlichkeit.</div></div><button class="secondary" onclick="toggleDecision(${idx})"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><span>${d.decided?"Wieder öffnen":"Als entschieden markieren"}</span></button></div></section>`;$("decisionModalActions").innerHTML=`<button class="secondary" onclick="renderDecisionForm(current().decisions[${idx}])">Struktur bearbeiten</button><button class="primary" onclick="saveDecisionResult(${idx})">Entscheidung speichern</button>`}
-function closeDecisionModal(){$("decisionModal").classList.remove("open");unlockPageScroll()}
+function closeDecisionModal(){
+  $("decisionModal").classList.remove("open");
+  unlockPageScroll();
+  flushPendingReadyMoment();
+}
 function saveDecision(){
   if(!validateDecisionForm(true))return;
   const q=$("decisionQuestion").value.trim(),reason=$("decisionReason").value.trim(),decisionText=$("decisionText").value.trim();
@@ -406,11 +436,13 @@ function toggleDecision(idx){
 function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return;}const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);current().log.push(`Kommentar zu Entscheidungspunkt hinzugefügt.`);render();openDecisionDetail(idx)}
 
 const inputConfirmQuestions=[
-  "Hast du auch nichts vergessen?",
-  "Bist du dir sicher?",
-  "Würdest du das in einer Woche noch genauso freigeben?",
-  "Ist dieser Input wirklich belastbar?",
-  "Kann jemand anderes damit weiterarbeiten?"
+  "Hand aufs Herz: Ist das wirklich vollständig?",
+  "Ist das geklärt — oder nur innerlich weggeklickt?",
+  "Würde dein Zukunfts-Ich das auch so abhaken?",
+  "Ist das Klarheit oder nur Optimismus?",
+  "Würdest du das morgen früh noch verteidigen?",
+  "Hat diese Info genug Substanz für den nächsten Schritt?",
+  "Wenn dich nächste Woche jemand fragt: weißt du dann noch, warum?"
 ];
 function askConfirmInputDone(callback){
   pendingInputAction=callback;
@@ -439,7 +471,7 @@ function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintra
 function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){openInputDetail(inputIndex);toast("Bitte Input bewusst abschließen.");return}const decisionIndex=r.decisions.findIndex(x=>!x.decided);if(decisionIndex>=0){toast("Entscheidungen brauchen zuerst eine begründete Dokumentation.");openDecisionDetail(decisionIndex);return}toast("Request ist bereits bereit.")}
 function addLog(text){current().log.push(text);render()}
 function toggleSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.add("open");b.classList.add("open");lockPageScroll()}
-function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll()}
+function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll();flushPendingReadyMoment()}
 function toggleDocumentation(){
   const body=$("documentationBody");
   const label=$("documentationToggleLabel");

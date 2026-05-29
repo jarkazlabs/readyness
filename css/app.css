@@ -312,3 +312,25 @@ select.invalid{
 .input-confirm-modal h2{font-size:24px;line-height:1.12;margin-bottom:10px}
 .input-confirm-modal .confirm-copy{color:var(--muted);line-height:1.55;margin:0}
 .input-confirm-modal .modal-actions{padding-top:18px}
+
+/* V25 · Make 100% ready rocket visible */
+.ring.rainbow .ring-inner::before{
+  content:"🚀";
+  position:absolute;
+  left:50%;
+  top:-42px;
+  transform:translateX(-50%) rotate(-10deg);
+  font-size:26px;
+  line-height:1;
+  filter:drop-shadow(0 8px 12px rgba(16,24,40,.16));
+  pointer-events:none;
+}
+.ring.rocket-launching .ring-inner::before{
+  animation:readyRocketPop 2.2s cubic-bezier(.18,.86,.24,1) forwards;
+}
+@keyframes readyRocketPop{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(.65) rotate(-10deg)}
+  18%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(-8deg)}
+  40%{transform:translateX(-50%) translateY(-4px) scale(1.08) rotate(4deg)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(-10deg)}
+}
