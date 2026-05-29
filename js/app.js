@@ -1,5 +1,5 @@
 const STORAGE_KEY = "readyness-prototype-v21";
-let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
+let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
 
 const mockUsers=[
   {name:"Sascha Boss",role:"Marketing"},
@@ -34,6 +34,20 @@ function initials(n){return(n||"?").split(" ").map(p=>p[0]).join("").slice(0,2).
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
 function score(r){const total=r.inputs.length+r.decisions.length;if(!total)return 0;return Math.round(((r.inputs.filter(i=>i.done).length+r.decisions.filter(d=>d.decided).length)/total)*100)}
+function readyMomentKey(id){return `readyness-ready-moment-${id}`}
+function triggerReadyMomentIfNeeded(r,s){
+  if(s!==100)return;
+  if(localStorage.getItem(readyMomentKey(r.id))==="seen")return;
+  localStorage.setItem(readyMomentKey(r.id),"seen");
+  setTimeout(()=>{
+    const ring=$("ring");
+    if(!ring)return;
+    ring.classList.remove("rocket-launching");
+    void ring.offsetWidth;
+    ring.classList.add("rocket-launching");
+    setTimeout(()=>ring.classList.remove("rocket-launching"),2800);
+  },260);
+}
 function ringColor(s){
   if(s>=100) return "#16a34a";
   if(s<25) return "#d92d20";
@@ -58,7 +72,7 @@ function commentsHtml(list){
 function readinessText(r){const mi=r.inputs.filter(i=>!i.done).length, od=r.decisions.filter(d=>!d.decided).length;if(mi===0&&od===0)return"Alle wesentlichen Inputs und Entscheidungen sind geklärt. Der Request ist bereit für die Umsetzung.";return`Es fehlen noch ${mi} Input(s) und ${od} Entscheidungspunkt(e). Der Request sollte noch nicht in die Umsetzung gehen.`}
 function nextStep(r){const i=r.inputs.find(x=>!x.done),d=r.decisions.find(x=>!x.decided);if(i)return`${i.name} von ${i.owner} klären`;if(d)return`Entscheidung von ${d.owner} einholen`;return"Bereit zur Umsetzung"}
 
-function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("category").textContent=r.category;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
+function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("category").textContent=r.category;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);triggerReadyMomentIfNeeded(r,s);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
 function requestStatusClass(s){
   if(s>=100) return "status-ready";
   if(s>=75) return "status-high";
@@ -141,7 +155,6 @@ function closeInputModal(){
 }
 
 function renderInputDetail(i,idx){
-  const canComplete=hasValidInputComment(i);
   $("inputModalTitle").textContent=i.name||"Input";
   $("inputModalSub").textContent="Der Verantwortliche ergänzt Informationen, Kommentare oder relevante Kontextdateien.";
   $("inputModalBody").innerHTML=`
@@ -173,7 +186,7 @@ function renderInputDetail(i,idx){
       <div class="drawer-card-title"><span class="mini-icon">☰</span><label>KOMMUNIKATION</label></div>
       <label class="small" style="font-weight:500;color:#344054">Kommentar / Kontext ergänzen</label>
       <div class="drawer-comment-form">
-        <div><textarea class="drawer-textarea" id="inputComment" placeholder="Welche Information lieferst du? Was muss später nachvollziehbar sein?"></textarea><div class="char-count">Mindestens 15 Zeichen, wenn der Input erledigt werden soll.</div></div>
+        <div><textarea class="drawer-textarea" id="inputComment" placeholder="Welche Information lieferst du? Was muss später nachvollziehbar sein?"></textarea><div class="char-count">Optional: Ergänze Kontext, wenn später etwas nachvollziehbar bleiben soll.</div></div>
         <button type="button" class="secondary" onclick="addInputComment(${idx})">Kommentieren</button>
       </div>
       <label class="small" style="display:block;font-weight:500;color:#344054;margin-top:16px">Verlauf & Kommentare</label>
@@ -183,8 +196,8 @@ function renderInputDetail(i,idx){
     <section class="drawer-card">
       <div class="drawer-card-title"><span class="mini-icon">✓</span><label>ABSCHLUSS</label></div>
       <div class="drawer-done-row">
-        <div><strong>${i.done?"Dieser Input ist geklärt.":"Input abschließen"}</strong><div class="small">Zum Abschließen ist mindestens ein Kommentar mit 15 Zeichen nötig.</div></div>
-        <button type="button" class="secondary" onclick="toggleInputDone(${idx})" ${(!i.done&&!canComplete)?"title='Bitte zuerst einen Kommentar ergänzen'":""}><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Wieder öffnen":"Als erledigt markieren"}</span></button>
+        <div><strong>${i.done?"Dieser Input ist geklärt.":"Input abschließen"}</strong><div class="small">Beim Abschließen fragt Readyness kurz nach, ob wirklich nichts fehlt.</div></div>
+        <button type="button" class="secondary" onclick="toggleInputDone(${idx})"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Wieder öffnen":"Als erledigt markieren"}</span></button>
       </div>
     </section>`;
   $("inputModalActions").innerHTML=`<button type="button" class="secondary" onclick="renderInputForm(current().inputs[${idx}])">Struktur bearbeiten</button><button type="button" class="primary" onclick="closeInputModal()">Schließen</button>`;
@@ -246,21 +259,41 @@ function saveInput(event){
     nameEl.focus();
     return false
   }
-  if(data.done&&!hasValidInputComment(data)){toast("Zum Erledigen ist mindestens ein Kommentar mit 15 Zeichen nötig.");doneEl.focus();return false}
   const r=current();
-  if(activeInputIndex===null){
-    r.inputs.push(data);
-    r.log.push(`Input „${data.name}“ wurde angelegt.`);
-  }else{
-    r.inputs[activeInputIndex]=data;
-    r.log.push(`Input „${data.name}“ wurde bearbeitet.`);
+  const wasDone=activeInputIndex!==null?!!(r.inputs[activeInputIndex]&&r.inputs[activeInputIndex].done):false;
+  const commit=()=>{
+    if(activeInputIndex===null){
+      r.inputs.push(data);
+      r.log.push(`Input „${data.name}“ wurde angelegt.`);
+    }else{
+      r.inputs[activeInputIndex]=data;
+      r.log.push(`Input „${data.name}“ wurde bearbeitet.`);
+    }
+    closeInputModal();
+    render();
+    toast("Input gespeichert");
+  };
+  if(data.done&&!wasDone){
+    askConfirmInputDone(commit);
+    return false;
   }
-  closeInputModal();
-  render();
-  toast("Input gespeichert");
+  commit();
   return false
 }
-function toggleInputDone(idx){const i=current().inputs[idx];if(!i.done && !hasValidInputComment(i)){toast("Bitte zuerst einen Kommentar mit mindestens 15 Zeichen ergänzen.");return}i.done=!i.done;current().log.push(`Input „${i.name}“ wurde als ${i.done?"erledigt":"offen"} markiert.`);render();openInputDetail(idx)}
+function toggleInputDone(idx){
+  const i=current().inputs[idx];
+  if(i.done){
+    i.done=false;
+    current().log.push(`Input „${i.name}“ wurde wieder geöffnet.`);
+    render();openInputDetail(idx);
+    return;
+  }
+  askConfirmInputDone(()=>{
+    i.done=true;
+    current().log.push(`Input „${i.name}“ wurde als erledigt markiert.`);
+    render();openInputDetail(idx);
+  });
+}
 function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);current().log.push(`Kommentar zu Input „${i.name}“ hinzugefügt.`);render();openInputDetail(idx)}
 
 function openDecisionCreate(){activeDecisionIndex=null;$("decisionModalTitle").textContent="Entscheidungspunkt anlegen";$("decisionModalSub").textContent="Eine Entscheidung braucht Frage, Begründung und Entscheider.";renderDecisionForm({question:"",reason:"",owner:"",decided:false,decision:"",comments:[]});$("decisionModal").classList.add("open");lockPageScroll()}
@@ -372,11 +405,38 @@ function toggleDecision(idx){
 }
 function addDecisionComment(idx){const val=$("decisionComment").value.trim();if(!isSentenceWithThreeWords(val)){toast("Bitte mindestens einen vollständigen Satz mit drei Wörtern formulieren.");return;}const d=current().decisions[idx];d.comments=d.comments||[];d.comments.push(`${d.owner}: ${val}`);current().log.push(`Kommentar zu Entscheidungspunkt hinzugefügt.`);render();openDecisionDetail(idx)}
 
+const inputConfirmQuestions=[
+  "Hast du auch nichts vergessen?",
+  "Bist du dir sicher?",
+  "Würdest du das in einer Woche noch genauso freigeben?",
+  "Ist dieser Input wirklich belastbar?",
+  "Kann jemand anderes damit weiterarbeiten?"
+];
+function askConfirmInputDone(callback){
+  pendingInputAction=callback;
+  const q=inputConfirmQuestions[Math.floor(Math.random()*inputConfirmQuestions.length)];
+  if($("inputConfirmQuestion"))$("inputConfirmQuestion").textContent=q;
+  if($("inputConfirmModal"))$("inputConfirmModal").classList.add("open");
+  lockPageScroll();
+}
+function closeInputConfirm(){
+  if($("inputConfirmModal"))$("inputConfirmModal").classList.remove("open");
+  pendingInputAction=null;
+  unlockPageScroll();
+}
+function confirmInputDone(){
+  const action=pendingInputAction;
+  if($("inputConfirmModal"))$("inputConfirmModal").classList.remove("open");
+  pendingInputAction=null;
+  if(typeof action==="function")action();
+  unlockPageScroll();
+}
+
 function openRequestModal(){editingRequest=false;$("requestModalTitle").textContent="Neue Anfrage";$("reqTitle").value="";$("reqCategory").value="Verpackung";$("reqCreatedBy").value="Sascha Boss";$("reqDeadline").value="";$("reqDesc").value="";$("requestModal").classList.add("open")}
 function editCurrent(){const r=current();editingRequest=true;$("requestModalTitle").textContent="Anfrage bearbeiten";$("reqTitle").value=r.title;$("reqCategory").value=r.category;$("reqCreatedBy").value=r.createdBy;$("reqDeadline").value=r.deadline;$("reqDesc").value=r.description;$("requestModal").classList.add("open")}
 function closeRequestModal(){$("requestModal").classList.remove("open")}
 function saveRequest(){if(!$("reqTitle").value.trim()){toast("Bitte Titel eintragen.");return}if(editingRequest){Object.assign(current(),{title:$("reqTitle").value,category:$("reqCategory").value,createdBy:$("reqCreatedBy").value,deadline:$("reqDeadline").value,description:$("reqDesc").value});current().log.push("Anfragedetails wurden bearbeitet.")}else{const id="REQ-"+new Date().getFullYear()+"-"+String(Math.floor(Math.random()*900)+100);state.requests.push({id,title:$("reqTitle").value,description:$("reqDesc").value,createdBy:$("reqCreatedBy").value,createdAt:new Date().toLocaleDateString("de-DE",{day:"2-digit",month:"long",year:"numeric"}),category:$("reqCategory").value,deadline:$("reqDeadline").value,inputs:[],decisions:[],log:["Request wurde erstellt."]});currentId=id}closeRequestModal();render()}
-function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){const i=r.inputs[inputIndex];if(!hasValidInputComment(i)){toast("Input braucht zuerst einen Kommentar mit mindestens 15 Zeichen.");openInputDetail(inputIndex);return}i.done=true;r.log.push(`Input „${i.name}“ wurde erledigt.`);render();return}const decisionIndex=r.decisions.findIndex(x=>!x.decided);if(decisionIndex>=0){toast("Entscheidungen brauchen zuerst eine begründete Dokumentation.");openDecisionDetail(decisionIndex);return}toast("Request ist bereits bereit.")}
+function completeNextStep(){const r=current();const inputIndex=r.inputs.findIndex(x=>!x.done);if(inputIndex>=0){openInputDetail(inputIndex);toast("Bitte Input bewusst abschließen.");return}const decisionIndex=r.decisions.findIndex(x=>!x.decided);if(decisionIndex>=0){toast("Entscheidungen brauchen zuerst eine begründete Dokumentation.");openDecisionDetail(decisionIndex);return}toast("Request ist bereits bereit.")}
 function addLog(text){current().log.push(text);render()}
 function toggleSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.add("open");b.classList.add("open");lockPageScroll()}
 function closeSidebar(){const a=$("aside"),b=$("drawerBackdrop");a.classList.remove("open");b.classList.remove("open");unlockPageScroll()}

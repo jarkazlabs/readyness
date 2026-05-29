@@ -149,6 +149,19 @@
   </div>
 </div></div>
 
+
+<div class="modal-bg input-confirm-bg" id="inputConfirmModal" onclick="if(event.target===this) closeInputConfirm()"><div class="modal input-confirm-modal" style="width:min(440px,100%)">
+  <header>
+    <div class="confirm-kicker">Input freigeben</div>
+    <h2 id="inputConfirmQuestion">Bist du dir sicher?</h2>
+    <p class="confirm-copy">Dieser Input wird als geklärt markiert. Es ist kein Pflichtkommentar nötig — aber die Freigabe sollte bewusst passieren.</p>
+  </header>
+  <div class="modal-actions">
+    <button class="secondary" onclick="closeInputConfirm()">Nein, nochmal prüfen</button>
+    <button class="primary" onclick="confirmInputDone()">Ja, freigeben</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script src="js/app.js"></script>
