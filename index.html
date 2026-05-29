@@ -27,7 +27,6 @@
       <div class="topbar-left">← Zurück zur Übersicht</div>
       <div class="top-actions">
         <button class="secondary" onclick="toggleSidebar()">Kontext öffnen</button>
-        <button class="secondary" onclick="editCurrent()">Details bearbeiten</button>
         <button class="secondary" onclick="resetDemo()">Demo zurücksetzen</button>
       </div>
     </div>
@@ -35,8 +34,13 @@
     <div class="layout">
       <div class="content">
         <section class="panel hero">
-          <span class="request-id" id="requestId"></span>
-          <h1 id="title"></h1>
+          <div class="hero-head">
+            <div>
+              <span class="request-id" id="requestId"></span>
+              <h1 id="title"></h1>
+            </div>
+            <button class="secondary hero-edit" onclick="editCurrent()">Details bearbeiten</button>
+          </div>
           <p class="subtitle" id="description"></p>
           <div class="meta">
             <div class="meta-card"><label>Erstellt von</label><strong id="createdBy"></strong></div>
