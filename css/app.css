@@ -2,15 +2,15 @@
   --bg:#f7f8fc;--surface:#fff;--text:#101828;--muted:#667085;--line:#e7eaf2;
   --blue:#4f46e5;--blue2:#2563eb;--green:#169b62;--amber:#d9822b;--red:#d92d20;
   --shadow:0 18px 52px rgba(16,24,40,.07);--radius:22px;
-  --font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font:"Instrument Sans",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --ring-color:#d92d20;
 }
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font-family:var(--font);font-size:14px;font-weight:400;line-height:1.55;color:var(--text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;background:radial-gradient(circle at 6% 0%,rgba(79,70,229,.1),transparent 30rem),linear-gradient(#fff,#f7f8fc 82%)}
 body.drawer-lock{overflow:hidden}
 button,input,textarea,select{font:inherit}button{border:0;cursor:pointer}
-.app{display:grid;grid-template-columns:264px minmax(0,1fr);min-height:100vh}
-.sidebar{position:sticky;top:0;height:100vh;padding:24px 18px;border-right:1px solid var(--line);background:rgba(255,255,255,.78);backdrop-filter:blur(18px);display:flex;flex-direction:column;gap:22px}
+.app{display:grid;grid-template-columns:312px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:24px 22px;border-right:1px solid var(--line);background:rgba(255,255,255,.78);backdrop-filter:blur(18px);display:flex;flex-direction:column;gap:22px}
 .brand{display:flex;align-items:center;gap:10px;min-height:38px}
 .brand-logo{display:block;width:134px;height:auto;max-height:32px;object-fit:contain}
 .primary{padding:12px 15px;border-radius:14px;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue2));font-weight:500;box-shadow:0 16px 28px rgba(79,70,229,.19)}
@@ -20,7 +20,7 @@ button,input,textarea,select{font:inherit}button{border:0;cursor:pointer}
 .nav button,.request-item{width:100%;display:flex;align-items:center;gap:10px;background:transparent;color:#344054;text-align:left;padding:10px 12px;border-radius:13px;font-weight:500}
 .nav button.active,.request-item.active{background:rgba(79,70,229,.09);color:#4338ca}
 .ico{width:18px;text-align:center;color:#667085}.label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#98a2b3;font-weight:500;margin:4px 0}
-.requests{display:grid;gap:5px;max-height:38vh;overflow:auto;padding-right:2px}.request-item{display:block}.request-title{display:flex;gap:8px;align-items:center;justify-content:space-between}.request-title span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.request-meta{font-size:12px;color:#667085;margin-top:3px}
+.requests{display:grid;gap:7px;max-height:38vh;overflow-y:auto;overflow-x:hidden;padding-right:0}.request-item{display:block;min-width:0;overflow:hidden}.request-title{display:flex;gap:8px;align-items:center;justify-content:space-between;min-width:0}.request-title span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.request-title .badge{flex:0 0 auto}.request-meta{font-size:12px;color:#667085;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.request-item.status-low{background:rgba(217,45,32,.065)}.request-item.status-low.active{background:linear-gradient(135deg,rgba(217,45,32,.10),rgba(79,70,229,.055))}.request-item.status-mid{background:rgba(249,115,22,.075)}.request-item.status-mid.active{background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(79,70,229,.055))}.request-item.status-high{background:rgba(34,197,94,.075)}.request-item.status-high.active{background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(79,70,229,.055))}.request-item.status-ready{background:linear-gradient(135deg,rgba(255,59,48,.06),rgba(255,149,0,.055),rgba(52,199,89,.06),rgba(0,122,255,.055),rgba(88,86,214,.06))}.request-item.status-ready.active{box-shadow:inset 0 0 0 1px rgba(79,70,229,.13)}
 .spacer{flex:1}.user-card{border:1px solid var(--line);border-radius:17px;background:white;padding:12px;display:flex;gap:10px;align-items:center}
 .avatar{width:32px;height:32px;border-radius:999px;background:#0f172a;color:white;display:grid;place-items:center;font-size:12px;font-weight:500;flex:0 0 auto}.small{font-size:12px;color:var(--muted);line-height:1.35}
 main{padding:30px;min-width:0}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.topbar-left{color:#475467;font-weight:500}.top-actions{display:flex;gap:9px;align-items:center}
@@ -186,6 +186,16 @@ h1{font-size:36px;line-height:1.08;font-weight:500;letter-spacing:-.045em;margin
   color:#fff;
 }
 
+
+/* Readyness v14 layout + typography refinements */
+.work-drawer, .work-drawer button, .work-drawer input, .work-drawer textarea, .work-drawer select{font-weight:400}
+.work-drawer strong,.work-drawer-header h2,.drawer-meta-item strong,.drawer-card-title label,.drawer-done-row strong{font-weight:500}
+.work-drawer .secondary,.work-drawer .primary{font-weight:500}
+.work-drawer .small,.work-drawer p,.drawer-text-box,.drawer-textarea,.drawer-select{font-weight:400}
+.work-drawer-body{font-size:13px}
+.work-drawer-header h2{font-size:21px}
+.drawer-card{padding:17px 18px}
+
 @media(max-width:1180px){.app{grid-template-columns:86px minmax(0,1fr)}.brand-logo{width:44px;max-width:44px;height:32px;object-fit:cover;object-position:left center}.nav .txt,.request-item .txt,.label,.user-card div:not(.avatar),.primary .txt{display:none}.sidebar{padding:22px 13px}.layout{grid-template-columns:1fr}.meta{grid-template-columns:repeat(2,1fr)}.ready{grid-template-columns:130px 1fr}.next{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:16px 0 0}}
 @media(max-width:760px){.app{display:block}.sidebar{height:auto;position:relative;flex-direction:row;overflow:auto}.spacer,.user-card,.requests{display:none}main{padding:18px}.meta,.edit-grid{grid-template-columns:1fr}.ready,.row,.decision,.event{grid-template-columns:1fr;align-items:start}.row.header{display:none}h1{font-size:32px}}
 
@@ -209,3 +219,13 @@ h1{font-size:36px;line-height:1.08;font-weight:500;letter-spacing:-.045em;margin
 .ring-inner b{font-weight:500}
 button{font-weight:500}
 strong{font-weight:500}
+
+/* Readyness v14 final overrides */
+.work-drawer, .work-drawer button, .work-drawer input, .work-drawer textarea, .work-drawer select{font-weight:400}
+.work-drawer strong,.work-drawer-header h2,.drawer-meta-item strong,.drawer-card-title label,.drawer-done-row strong{font-weight:500}
+.work-drawer .secondary,.work-drawer .primary,.work-drawer .upload-zone button,.work-drawer .char-count{font-weight:500}
+.work-drawer .small,.work-drawer p,.drawer-text-box,.drawer-textarea,.drawer-select{font-weight:400}
+.work-drawer-body{font-size:13px}
+.work-drawer-header h2{font-size:21px;font-weight:500}
+.drawer-card{padding:17px 18px}
+.request-item .badge{font-weight:500}
