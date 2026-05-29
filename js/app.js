@@ -1,4 +1,4 @@
-const STORAGE_KEY = "readyness-prototype-v16";
+const STORAGE_KEY = "readyness-prototype-v17";
 let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null;
 
 const mockUsers=[
@@ -153,10 +153,40 @@ function renderInputForm(i){
       <div class="field"><label>Beschreibung</label><textarea class="compact-textarea" id="inputDesc" placeholder="Welche Information wird benötigt? Warum ist sie für die Klärung relevant?">${esc(i.desc)}</textarea></div>
       <p class="form-help">Ein Input ist keine Aufgabe. Er beschreibt eine fehlende Information, die eine andere Person liefern oder bestätigen muss.</p>
     </section>`;
-  $("inputModalActions").innerHTML=`<button class="secondary" onclick="closeInputModal()">Abbrechen</button><button class="primary" onclick="saveInput()">Input speichern</button>`;
-  setTimeout(()=>{$("inputDone").value=String(i.done); if($("inputDept")) $("inputDept").value=i.dept||"Marketing"},0)
+  $("inputModalActions").innerHTML=`<button type="button" class="secondary" id="cancelInputBtn">Abbrechen</button><button type="button" class="primary" id="saveInputBtn">Input speichern</button>`;
+  setTimeout(()=>{
+    if($("inputDone")) $("inputDone").value=String(i.done);
+    if($("inputDept")) $("inputDept").value=i.dept||"Marketing";
+    if($("saveInputBtn")) $("saveInputBtn").addEventListener("click", saveInput);
+    if($("cancelInputBtn")) $("cancelInputBtn").addEventListener("click", closeInputModal);
+  },0)
 }
-function saveInput(){const data={name:$("inputName").value,owner:$("inputOwner").value,dept:$("inputDept").value,desc:$("inputDesc").value,done:$("inputDone").value==="true",comments:activeInputIndex===null?[]:(current().inputs[activeInputIndex].comments||[])};if(!data.name.trim()||!data.owner.trim()){toast("Bitte Name und Verantwortlichen eintragen.");return}const r=current();if(activeInputIndex===null){r.inputs.push(data);r.log.push(`Input „${data.name}“ wurde angelegt.`)}else{r.inputs[activeInputIndex]=data;r.log.push(`Input „${data.name}“ wurde bearbeitet.`)}closeInputModal();render()}
+function saveInput(){
+  const nameEl=$("inputName"), ownerEl=$("inputOwner"), deptEl=$("inputDept"), descEl=$("inputDesc"), doneEl=$("inputDone");
+  if(!nameEl||!ownerEl||!deptEl||!descEl||!doneEl){toast("Das Input-Formular ist nicht vollständig geladen.");return}
+  const existingComments=activeInputIndex===null?[]:((current().inputs[activeInputIndex]||{}).comments||[]);
+  const data={
+    name:nameEl.value.trim(),
+    owner:ownerEl.value.trim()||"Sascha Boss",
+    dept:deptEl.value.trim()||"Marketing",
+    desc:descEl.value.trim(),
+    done:doneEl.value==="true",
+    comments:existingComments
+  };
+  if(!data.name){toast("Bitte einen Namen für den Input eintragen.");nameEl.focus();return}
+  if(data.done&&!hasValidInputComment(data)){toast("Zum Erledigen ist mindestens ein Kommentar mit 15 Zeichen nötig.");doneEl.focus();return}
+  const r=current();
+  if(activeInputIndex===null){
+    r.inputs.push(data);
+    r.log.push(`Input „${data.name}“ wurde angelegt.`);
+  }else{
+    r.inputs[activeInputIndex]=data;
+    r.log.push(`Input „${data.name}“ wurde bearbeitet.`);
+  }
+  closeInputModal();
+  render();
+  toast("Input gespeichert");
+}
 function toggleInputDone(idx){const i=current().inputs[idx];if(!i.done && !hasValidInputComment(i)){toast("Bitte zuerst einen Kommentar mit mindestens 15 Zeichen ergänzen.");return}i.done=!i.done;current().log.push(`Input „${i.name}“ wurde als ${i.done?"erledigt":"offen"} markiert.`);render();openInputDetail(idx)}
 function addInputComment(idx){const val=$("inputComment").value.trim();if(val.length<15){toast("Kommentar muss mindestens 15 Zeichen haben.");return}const i=current().inputs[idx];i.comments=i.comments||[];i.comments.push(`${i.owner}: ${val}`);current().log.push(`Kommentar zu Input „${i.name}“ hinzugefügt.`);render();openInputDetail(idx)}
 
