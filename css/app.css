@@ -229,3 +229,20 @@ strong{font-weight:500}
 .work-drawer-header h2{font-size:21px;font-weight:500}
 .drawer-card{padding:17px 18px}
 .request-item .badge{font-weight:500}
+
+/* v16 refinements */
+body{font-size:15px}
+.sidebar{width:312px}
+.user-card strong,.person strong,.meta-card strong,.request-title span:first-child{font-weight:500}
+.work-drawer-body{font-size:14px}
+.drawer-card-title label{letter-spacing:.04em;font-weight:500}
+.drawer-meta-item strong,.drawer-done-row strong{font-weight:500}
+.refined-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.refined-form-grid.small-grid{margin-top:16px}
+.form-card{display:grid;gap:16px}
+.primary-form-card{background:linear-gradient(180deg,rgba(79,70,229,.045),rgba(255,255,255,.96))}
+.decision-form-card{background:linear-gradient(180deg,rgba(124,58,237,.045),rgba(255,255,255,.96))}
+.field input,.field textarea,.field select{min-height:52px;border-radius:16px;padding:14px 15px;font-size:15px;box-shadow:0 1px 0 rgba(16,24,40,.02)}
+.field textarea.compact-textarea{min-height:118px;line-height:1.5}
+.form-help{margin:0;color:var(--muted);font-size:14px;line-height:1.55;background:rgba(247,248,252,.8);border:1px solid var(--line);border-radius:15px;padding:12px 14px}
+@media(max-width:760px){.refined-form-grid{grid-template-columns:1fr}}
