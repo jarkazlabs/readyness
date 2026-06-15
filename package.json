@@ -1,0 +1,7 @@
+{
+  "name": "readyness",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  }
+}

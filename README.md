@@ -1,17 +1,41 @@
-# Readyness Prototype v8
+# Readyness
 
-## Änderungen
-- Entscheidungspunkte nutzen jetzt ebenfalls Checkbox-Charakter
-- erledigte Entscheidungspunkte werden grün abgehakt und ausgegraut
-- Input kann nur erledigt werden, wenn ein Kommentar mit mindestens 15 Zeichen vorhanden ist
-- Kommentar zu Input benötigt mindestens 15 Zeichen
-- Nächster Schritt respektiert diese Regel ebenfalls
+Readyness ist eine Produktdemo für die dokumentierte Klärung eines Vorhabens vor dessen Umsetzung.
+
+## Produktlogik
+
+- Vorhaben haben einen Ersteller, eine hauptverantwortliche Person, eine Zielabteilung und Beteiligte.
+- Inputs halten benötigte Informationen fest und werden bewusst über ein Bestätigungs-Popover abgeschlossen.
+- Entscheidungen benötigen ein dokumentiertes Ergebnis.
+- Alle Inputs und Entscheidungen zählen gleich zur Readyness.
+- Jeder offene Punkt verhindert 100 Prozent Readyness.
+- Die Funktion „Nächste Klärung“ motiviert zum Weiterarbeiten, ohne Readyness zu einem Aufgaben-Tool zu machen.
+- Änderungen und Abschlüsse bleiben in der Historie nachvollziehbar.
+
+## Demo
+
+Die Demo simuliert Sascha Boss als Administrator. Administration, Abteilungen, Personen und Rollen sind lokal hinterlegt.
+
+Die Daten werden ausschließlich im Browser über `localStorage` gespeichert.
+
+## Tests
+
+Die Kernlogik wird ohne zusätzliche Abhängigkeiten mit dem integrierten Node-Test-Runner geprüft:
+
+```sh
+npm test
+```
+
+Bei Pushes und Pull Requests führt GitHub Actions diese Tests ebenfalls aus.
 
 ## Lokal öffnen
-`index.html` per Doppelklick im Browser öffnen.
 
+`index.html` direkt im Browser öffnen.
 
-## v11
-- Input- und Entscheidungsdialoge als breite Side-Drawer überarbeitet.
-- Projekt modularisiert: CSS und JavaScript liegen nun in getrennten Ordnern.
-- Hauptlayout, Readyness-Kreis und bestehende Dashboard-Struktur bleiben unverändert.
+Alternativ kann im Projektordner ein lokaler Webserver gestartet werden:
+
+```sh
+python3 -m http.server 4173
+```
+
+Anschließend `http://127.0.0.1:4173` öffnen.

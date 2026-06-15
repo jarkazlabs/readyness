@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Readyness – Prototype v28</title>
+<title>Readyness – Produktdemo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -13,16 +13,17 @@
 <div class="app">
   <aside class="sidebar">
     <div class="brand"><img class="brand-logo" src="readyness-logo.svg" alt="Readyness"></div>
-    <button class="primary" onclick="openRequestModal()"><span class="txt">＋ Neue Anfrage</span></button>
+    <button class="primary" onclick="openRequestModal()"><span class="txt">＋ Neues Vorhaben</span></button>
     <nav class="nav">
-      <button><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
-      <button class="active"><span class="ico">□</span><span class="txt">Anfragen</span></button>
-      <button><span class="ico">?</span><span class="txt">Entscheidungen</span></button>
-      <button><span class="ico">✓</span><span class="txt">Inputs</span></button>
+      <button onclick="showDemoArea('Übersicht')"><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
+      <button class="active"><span class="ico">□</span><span class="txt">Vorhaben</span></button>
+      <button onclick="showDemoArea('Entscheidungen')"><span class="ico">?</span><span class="txt">Entscheidungen</span></button>
+      <button onclick="showDemoArea('Inputs')"><span class="ico">✓</span><span class="txt">Inputs</span></button>
+      <button onclick="openAdminModal()"><span class="ico">⚙</span><span class="txt">Administration</span></button>
     </nav>
-    <div><div class="label">Requests</div><div class="requests" id="requestList"></div></div>
+    <div><div class="label">Vorhaben</div><div class="requests" id="requestList"></div></div>
     <div class="spacer"></div>
-    <div class="user-card"><div class="avatar">SB</div><div><strong>Sascha Boss</strong><div class="small">Marketing</div></div></div>
+    <div class="user-card"><div class="avatar">SB</div><div><strong>Sascha Boss</strong><div class="user-meta"><span class="small">Marketing</span><span class="admin-badge">Admin</span></div></div></div>
   </aside>
 
   <main>
@@ -48,7 +49,8 @@
           <div class="meta">
             <div class="meta-card"><label>Erstellt von</label><strong id="createdBy"></strong></div>
             <div class="meta-card"><label>Erstellt am</label><strong id="createdAt"></strong></div>
-            <div class="meta-card"><label>Kategorie</label><strong id="category"></strong></div>
+            <div class="meta-card"><label>Hauptverantwortlich</label><strong id="responsible"></strong></div>
+            <div class="meta-card"><label>Zielabteilung</label><strong id="targetDepartment"></strong></div>
             <div class="meta-card"><label>Gewünschte Deadline</label><strong id="deadline"></strong><div class="small">Nur eine Gesamtdeadline.</div></div>
           </div>
         </section>
@@ -61,7 +63,7 @@
 
         <section class="panel section">
           <div class="section-head"><h2>Benötigte Inputs <span class="count" id="inputCount"></span></h2><button class="secondary" onclick="openInputCreate()">＋ Input hinzufügen</button></div>
-          <p class="hint">Inputs sind keine Aufgabenliste. Sie zeigen, welche Informationen fehlen, damit die Anfrage organisatorisch klar wird.</p>
+          <p class="hint">Inputs sind keine Aufgabenliste. Sie zeigen, welche Informationen fehlen, damit das Vorhaben organisatorisch klar wird.</p>
           <div class="table" id="inputsTable"></div>
         </section>
 
@@ -85,25 +87,38 @@
 
       <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeSidebar()"></div>
       <aside class="aside" id="aside">
-        <div class="drawer-head"><strong>Request-Kontext</strong><button class="secondary" onclick="closeSidebar()">×</button></div>
-        <section class="side-panel"><h3>Kontext & Klarheit</h3><div class="activity" id="sideActivity"></div></section>
+        <div class="drawer-head"><strong>Vorhaben-Kontext</strong><button class="secondary" onclick="closeSidebar()">×</button></div>
+        <section class="side-panel"><h3>Organisation</h3><div class="context-grid" id="sideOrganization"></div></section>
+        <section class="side-panel"><h3>Beteiligte</h3><div class="participant-list" id="sideParticipants"></div></section>
         <section class="side-panel"><h3>Readyness-Hinweis</h3><div class="insight" id="aiHint"></div></section>
-        <section class="side-panel"><h3>Nächste Schritte</h3><div class="activity" id="sideSteps"></div></section>
+        <section class="side-panel"><h3>Letzte Änderungen</h3><div class="activity" id="sideActivity"></div></section>
       </aside>
     </div>
   </main>
 </div>
 
 <div class="modal-bg" id="requestModal"><div class="modal">
-  <header><h2 id="requestModalTitle">Neue Anfrage</h2><p class="subtitle">Ein Request startet mit dem Ziel, nicht mit der Aufgabe.</p></header>
+  <header><h2 id="requestModalTitle">Neues Vorhaben</h2><p class="subtitle">Ein Vorhaben startet mit dem gewünschten Ergebnis, nicht mit einer Aufgabenliste.</p></header>
   <div class="modal-body"><div class="edit-grid">
     <div class="field"><label>Titel</label><input id="reqTitle"></div>
     <div class="field"><label>Kategorie</label><input id="reqCategory"></div>
-    <div class="field"><label>Erstellt von</label><input id="reqCreatedBy"></div>
+    <div class="field"><label>Erstellt von</label><select id="reqCreatedBy"></select></div>
+    <div class="field"><label>Hauptverantwortlich</label><select id="reqResponsible"></select></div>
+    <div class="field"><label>Zielabteilung</label><select id="reqTargetDepartment"></select></div>
     <div class="field"><label>Gewünschte Deadline</label><input id="reqDeadline" type="date"></div>
     <div class="field full"><label>Beschreibung / Ziel</label><textarea id="reqDesc"></textarea></div>
+    <div class="field full"><label>Beteiligte Personen</label><div class="participant-picker" id="reqParticipants"></div></div>
   </div></div>
   <div class="modal-actions"><button class="secondary" onclick="closeRequestModal()">Abbrechen</button><button class="primary" onclick="saveRequest()">Speichern</button></div>
+</div></div>
+
+<div class="modal-bg" id="adminModal"><div class="modal admin-modal">
+  <header><h2>Administration</h2><p class="subtitle">Organisationsstruktur der Demo. Später werden diese Daten zentral verwaltet.</p></header>
+  <div class="modal-body admin-grid">
+    <section class="admin-card"><h3>Abteilungen</h3><div id="adminDepartments"></div></section>
+    <section class="admin-card"><h3>Personen & Rollen</h3><div id="adminUsers"></div></section>
+  </div>
+  <div class="modal-actions"><button class="primary" onclick="closeAdminModal()">Schließen</button></div>
 </div></div>
 
 <div class="work-drawer-bg" id="inputModal" onclick="if(event.target===this) closeInputModal()">
@@ -163,6 +178,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="js/core.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
