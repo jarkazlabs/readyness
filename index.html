@@ -7,15 +7,96 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=readyness-improvements">
 </head>
 <body>
+<section class="landing" id="landing">
+  <header class="landing-nav">
+    <a class="landing-brand" href="#start" aria-label="Readyness Startseite">
+      <img src="readyness-logo.svg" alt="Readyness">
+    </a>
+    <nav class="landing-links" aria-label="Hauptnavigation">
+      <a href="#funktionen">Funktionen</a>
+      <a href="#so-funktionierts">So funktioniert’s</a>
+      <a href="#vorteile">Vorteile</a>
+      <a href="#teams">Für Teams</a>
+      <a href="#preise">Preise</a>
+    </nav>
+    <button class="landing-top-cta" onclick="enterApp()">Jetzt starten</button>
+  </header>
+
+  <main class="landing-main" id="start">
+    <section class="landing-hero">
+      <div class="landing-copy">
+        <span class="eyebrow">Klarheit für Teams</span>
+        <h1>Klarheit schaffen.<br><span>Gemeinsam vorankommen.</span></h1>
+        <p>Readyness ist die Plattform für klare Vorhaben.<br>Alle Informationen, Verantwortlichkeiten und Entscheidungen<br>an einem Ort – nachvollziehbar, transparent und effizient.</p>
+        <div class="hero-actions">
+          <button class="hero-cta" onclick="enterApp()">Jetzt starten <span>→</span></button>
+          <button class="play-action" onclick="toast('Video folgt in der nächsten Demo-Version.')"><span>▶</span>In 90 Sekunden verstehen</button>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Readyness App Vorschau">
+        <div class="radar"></div>
+        <article class="floating-card float-input"><span class="float-icon purple">▤</span><div><strong>Input benötigt</strong><small>Informationen sammeln</small></div></article>
+        <article class="floating-card float-decision"><span class="float-icon orange">▧</span><div><strong>Entscheidung offen</strong><small>Klärung herbeiführen</small></div></article>
+        <article class="floating-card float-approval"><span class="float-icon green-icon">✓</span><div><strong>Freigabe erteilt</strong><small>Nachvollziehbar dokumentiert</small></div></article>
+        <article class="floating-card float-progress"><span class="float-icon blue-icon">☷</span><div><strong>Vorhaben vorantreiben</strong><small>Ziele schneller erreichen</small></div></article>
+        <div class="app-preview">
+          <aside>
+            <img src="readyness-logo.svg" alt="">
+            <span>⌂ Übersicht</span>
+            <span class="active">□ Vorhaben</span>
+            <span>◇ Entscheidungen</span>
+            <span>▤ Inputs</span>
+            <span>⚙ Administration</span>
+          </aside>
+          <section>
+            <h2>Verpackung E-Bike-Leuchte</h2>
+            <div class="preview-ready">
+              <div class="preview-ring"><b>14%</b><small>Readyness</small></div>
+              <div><strong>In Klärung</strong><p>Es fehlen noch 4 Input(s) und 2 Entscheidungspunkt(e), bis das Vorhaben bereit ist.</p></div>
+            </div>
+            <div class="preview-list">
+              <div><strong>Benötigte Inputs</strong><span>5</span></div>
+              <p></p><p></p><p></p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="how" id="so-funktionierts">
+      <h2>So funktioniert Readyness</h2>
+      <div class="steps">
+        <article><span class="step-num rose">1</span><div class="step-icon rose">▧</div><h3>Vorhaben erstellen</h3><p>Lege ein Vorhaben an und definiere, welche Informationen und Entscheidungen benötigt werden.</p></article>
+        <article><span class="step-num purple-num">2</span><div class="step-icon purple">☷</div><h3>Inputs sammeln</h3><p>Die richtigen Personen liefern die notwendigen Informationen – alles an einem Ort.</p></article>
+        <article><span class="step-num orange-num">3</span><div class="step-icon orange">✓</div><h3>Entscheidungen treffen</h3><p>Offene Punkte werden geklärt, nachvollziehbar dokumentiert und für alle sichtbar.</p></article>
+        <article><span class="step-num green-num">4</span><div class="step-icon green-icon">↗</div><h3>Vorhaben vorantreiben</h3><p>Mit Klarheit und Alignment erreichst du Ziele schneller und stressfreier.</p></article>
+      </div>
+    </section>
+
+    <section class="benefits" id="vorteile">
+      <article><span class="benefit-icon rose">☷</span><div><h3>Weniger Rückfragen</h3><p>Alle relevanten Informationen von Anfang an.</p></div></article>
+      <article><span class="benefit-icon orange">◇</span><div><h3>Transparente Entscheidungen</h3><p>Jede Entscheidung ist dokumentiert und nachvollziehbar.</p></div></article>
+      <article><span class="benefit-icon green-icon">☷</span><div><h3>Klare Verantwortlichkeiten</h3><p>Jeder weiß, was zu tun ist und bis wann.</p></div></article>
+      <article><span class="benefit-icon blue-icon">◷</span><div><h3>Mehr Zeit fürs Wesentliche</h3><p>Weniger Abstimmung, mehr Umsetzung.</p></div></article>
+    </section>
+
+    <section class="trusted" id="teams">
+      <p>Bereits Teams in Marketing, Produktmanagement und Operations vertrauen auf Readyness.</p>
+      <div><strong>BÜCHEL</strong><strong>BIKEWERK</strong><strong>WITTKOP</strong><strong>VUELTA</strong></div>
+    </section>
+  </main>
+</section>
+
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><img class="brand-logo" src="readyness-logo.svg" alt="Readyness"></div>
+    <div class="brand"><button class="brand-home" onclick="showLanding()" aria-label="Zur Readyness Startseite"><img class="brand-logo" src="readyness-logo.svg" alt="Readyness"></button></div>
     <button class="primary" onclick="openRequestModal()"><span class="txt">＋ Neues Vorhaben</span></button>
     <nav class="nav">
-      <button onclick="showDemoArea('Übersicht')"><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
+      <button onclick="showOverview()"><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
       <button class="active"><span class="ico">□</span><span class="txt">Vorhaben</span></button>
       <button onclick="showDemoArea('Entscheidungen')"><span class="ico">?</span><span class="txt">Entscheidungen</span></button>
       <button onclick="showDemoArea('Inputs')"><span class="ico">✓</span><span class="txt">Inputs</span></button>
@@ -37,6 +118,18 @@
 
     <div class="layout">
       <div class="content">
+        <section class="overview-panel" id="overviewPanel">
+          <div class="overview-head">
+            <div>
+              <span class="eyebrow app-eyebrow">Übersicht</span>
+              <h2>Was braucht gerade Klarheit?</h2>
+              <p>Readyness zeigt, welche Vorhaben bereit sind, wo Entscheidungen fehlen und welcher nächste Schritt am meisten Wirkung hat.</p>
+            </div>
+            <button class="secondary" onclick="openRequestModal()">＋ Vorhaben anlegen</button>
+          </div>
+          <div class="overview-grid" id="overviewGrid"></div>
+        </section>
+
         <section class="panel hero">
           <div class="hero-head">
             <div>
@@ -57,8 +150,18 @@
 
         <section class="ready">
           <div class="ring" id="ring"><div class="ring-inner"><b id="score">0%</b><span>Readyness</span></div></div>
-          <div><h2 id="readyState">Nicht bereit</h2><p id="readyText"></p></div>
-          <div class="next"><label>Nächste Klärung</label><strong id="nextStep"></strong><button class="secondary" onclick="completeNextStep()">Klarheit erhöhen →</button></div>
+          <div class="ready-copy">
+            <span class="eyebrow app-eyebrow">Readyness</span>
+            <h2 id="readyState">Nicht bereit</h2>
+            <p id="readyText"></p>
+            <div class="readiness-facts" id="readinessFacts"></div>
+          </div>
+          <div class="next focus-card">
+            <label>Fokus: Nächste Klärung</label>
+            <strong id="nextStep"></strong>
+            <p id="nextStepReason"></p>
+            <button class="primary" onclick="completeNextStep()">Klarheit erhöhen →</button>
+          </div>
         </section>
 
         <section class="panel section">
@@ -178,7 +281,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/core.js"></script>
-<script src="js/app.js"></script>
+<script src="js/core.js?v=readyness-improvements"></script>
+<script src="js/app.js?v=readyness-improvements"></script>
 </body>
 </html>
