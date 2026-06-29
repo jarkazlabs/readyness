@@ -1,5 +1,5 @@
 const STORAGE_KEY = "readyness-prototype-v30";
-let state,currentId,editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
+let state,currentId,appView="detail",editingRequest=false,activeInputIndex=null,activeDecisionIndex=null,deleteTarget=null,pendingInputAction=null;
 const {isSentenceWithThreeWords,normalizeRequest,score,nextStepItem}=ReadynessCore;
 
 const mockUsers=[
@@ -43,7 +43,9 @@ function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
 function currentUser(){return "Sascha Boss"}
 function enterApp(){
+  appView="overview";
   document.body.classList.add("app-mode");
+  render();
   history.replaceState(null,"","#app");
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -114,6 +116,18 @@ function statusLabel(r){
   const s=score(r);
   return s===100?"Bereit":s>=75?"Fast bereit":s>0?"In Klärung":"Nicht bereit";
 }
+function renderView(){
+  const isOverview=appView==="overview";
+  const overviewPanel=$("overviewPanel");
+  if(overviewPanel) overviewPanel.hidden=!isOverview;
+  document.querySelectorAll("[data-view='detail']").forEach(el=>{el.hidden=isOverview});
+  $("navOverview")?.classList.toggle("active",isOverview);
+  $("navRequests")?.classList.toggle("active",!isOverview);
+  if($("backToOverview")){
+    $("backToOverview").textContent=isOverview?"Übersicht":"← Zurück zur Übersicht";
+    $("backToOverview").disabled=isOverview;
+  }
+}
 
 function render(){
   const r=current();
@@ -122,6 +136,7 @@ function render(){
   const step=nextStepItem(r);
   renderOverview();
   renderRequestList();
+  renderView();
   $("requestId").textContent=r.id;
   $("title").textContent=r.title;
   $("description").textContent=r.description;
@@ -177,12 +192,43 @@ function renderOverview(){
       <strong>${openInputs+openDecisions}</strong>
       <p>${openInputs} Inputs und ${openDecisions} Entscheidungen sind über alle Vorhaben offen.</p>
     </article>
-    <article class="overview-card focus">
+    <article class="overview-card focus overview-focus-card" onclick="openFocusRequest()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openFocusRequest()}">
       <span>Nächster sinnvoller Schritt</span>
       <strong>${esc(nextStepLabel(focus))}</strong>
       <p>${esc(nextStepReason(focus))}</p>
-      <button class="secondary" onclick="completeNextStep()">Jetzt klären</button>
+      <button class="secondary" onclick="event.stopPropagation();openFocusRequest(true)">Jetzt klären</button>
     </article>`;
+  $("overviewRequestList").innerHTML=`
+    <div class="overview-list-head">
+      <div>
+        <h3>Alle Vorhaben</h3>
+        <p>Ein schneller Blick auf Readyness, offene Punkte, Verantwortliche und Deadline.</p>
+      </div>
+      <span>${requests.length} Vorhaben</span>
+    </div>
+    <div class="overview-requests">
+      ${requests.map(r=>{
+        const s=score(r);
+        const m=missingCounts(r);
+        return `<button class="overview-request ${r.id===currentId?"active":""}" onclick="selectRequest('${esc(r.id)}')">
+          <div class="overview-request-main">
+            <span class="request-id">${esc(r.id)}</span>
+            <strong>${esc(r.title)}</strong>
+            <small>${esc(r.targetDepartment)} · verantwortlich: ${esc(r.responsible)}</small>
+          </div>
+          <div class="overview-request-meta">
+            <span class="badge ${requestBadgeClass(s)}">${statusLabel(r)}</span>
+            <span>${m.openInputs} Inputs offen</span>
+            <span>${m.openDecisions} Entscheidungen offen</span>
+            <span>Deadline ${fmtDate(r.deadline)}</span>
+          </div>
+          <div class="overview-request-score" style="--overview-score:${s}%">
+            <b>${s}%</b>
+            <small>Readyness</small>
+          </div>
+        </button>`
+      }).join("")}
+    </div>`;
 }
 function renderRequestList(){$("requestList").innerHTML=state.requests.map(r=>{const s=score(r);return `<button class="request-item ${requestStatusClass(s)} ${r.id===currentId?"active":""}" onclick="selectRequest('${r.id}')"><div class="request-title"><span class="txt">${esc(r.title)}</span><span class="badge ${requestBadgeClass(s)}">${s}%</span></div><div class="request-meta txt">${esc(r.targetDepartment)} · ${fmtDate(r.deadline)}</div></button>`}).join("")}
 function emptyState(kind){
@@ -214,7 +260,14 @@ function renderAside(r){
   }).join("");
   $("aiHint").textContent=readinessText(r);
 }
-function selectRequest(id){currentId=id;render()}
+function selectRequest(id){currentId=id;appView="detail";render();window.scrollTo({top:0,behavior:"smooth"})}
+function openFocusRequest(openStep=false){
+  appView="detail";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+  toast(openStep?"Vorhaben geöffnet. Nächste Klärung wird geöffnet.":"Vorhaben geöffnet.");
+  if(openStep) setTimeout(()=>completeNextStep(),220);
+}
 function setNextItem(type,idx){
   const r=current();
   const list=type==="input"?r.inputs:r.decisions;
@@ -649,9 +702,12 @@ function toggleDocumentation(){
   label.textContent=body.classList.contains("open")?"Zuklappen ↑":"Aufklappen ↓";
 }
 function showOverview(){
-  $("overviewPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
-  toast("Übersicht zeigt jetzt die wichtigsten Klärungspunkte.");
+  appView="overview";
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+  toast("Übersicht zeigt jetzt alle Vorhaben und ihre Klärungspunkte.");
 }
+function showRequestView(){appView="detail";render();window.scrollTo({top:0,behavior:"smooth"})}
 function showDemoArea(area){toast(`${area} wird in der nächsten Ausbaustufe zur eigenen Übersicht.`)}
 function openAdminModal(){
   $("adminDepartments").innerHTML=departments.map(d=>`<div class="admin-list-item"><strong>${esc(d)}</strong><span>${state.requests.filter(r=>r.targetDepartment===d).length} Vorhaben</span></div>`).join("");
@@ -676,4 +732,8 @@ document.addEventListener("click",(event)=>{
 window.addEventListener("resize",closeInputConfirm);
 
 load();render();
-if(location.hash==="#app") document.body.classList.add("app-mode");
+if(location.hash==="#app"){
+  appView="overview";
+  document.body.classList.add("app-mode");
+  render();
+}

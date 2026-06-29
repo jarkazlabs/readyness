@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=readyness-improvements">
+<link rel="stylesheet" href="css/app.css?v=readyness-views">
 </head>
 <body>
 <section class="landing" id="landing">
@@ -96,8 +96,8 @@
     <div class="brand"><button class="brand-home" onclick="showLanding()" aria-label="Zur Readyness Startseite"><img class="brand-logo" src="readyness-logo.svg" alt="Readyness"></button></div>
     <button class="primary" onclick="openRequestModal()"><span class="txt">＋ Neues Vorhaben</span></button>
     <nav class="nav">
-      <button onclick="showOverview()"><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
-      <button class="active"><span class="ico">□</span><span class="txt">Vorhaben</span></button>
+      <button id="navOverview" onclick="showOverview()"><span class="ico">⌂</span><span class="txt">Übersicht</span></button>
+      <button id="navRequests" class="active" onclick="showRequestView()"><span class="ico">□</span><span class="txt">Vorhaben</span></button>
       <button onclick="showDemoArea('Entscheidungen')"><span class="ico">?</span><span class="txt">Entscheidungen</span></button>
       <button onclick="showDemoArea('Inputs')"><span class="ico">✓</span><span class="txt">Inputs</span></button>
       <button onclick="openAdminModal()"><span class="ico">⚙</span><span class="txt">Administration</span></button>
@@ -109,7 +109,7 @@
 
   <main>
     <div class="topbar">
-      <div class="topbar-left">← Zurück zur Übersicht</div>
+      <button class="topbar-left back-link" id="backToOverview" onclick="showOverview()">← Zurück zur Übersicht</button>
       <div class="top-actions">
         <button class="secondary" onclick="toggleSidebar()">Kontext öffnen</button>
         <button class="secondary" onclick="resetDemo()">Demo zurücksetzen</button>
@@ -128,9 +128,10 @@
             <button class="secondary" onclick="openRequestModal()">＋ Vorhaben anlegen</button>
           </div>
           <div class="overview-grid" id="overviewGrid"></div>
+          <div class="overview-list" id="overviewRequestList"></div>
         </section>
 
-        <section class="panel hero">
+        <section class="panel hero" data-view="detail">
           <div class="hero-head">
             <div>
               <span class="request-id" id="requestId"></span>
@@ -148,7 +149,7 @@
           </div>
         </section>
 
-        <section class="ready">
+        <section class="ready" data-view="detail">
           <div class="ring" id="ring"><div class="ring-inner"><b id="score">0%</b><span>Readyness</span></div></div>
           <div class="ready-copy">
             <span class="eyebrow app-eyebrow">Readyness</span>
@@ -164,19 +165,19 @@
           </div>
         </section>
 
-        <section class="panel section">
+        <section class="panel section" data-view="detail">
           <div class="section-head"><h2>Benötigte Inputs <span class="count" id="inputCount"></span></h2><button class="secondary" onclick="openInputCreate()">＋ Input hinzufügen</button></div>
           <p class="hint">Inputs sind keine Aufgabenliste. Sie zeigen, welche Informationen fehlen, damit das Vorhaben organisatorisch klar wird.</p>
           <div class="table" id="inputsTable"></div>
         </section>
 
-        <section class="panel section">
+        <section class="panel section" data-view="detail">
           <div class="section-head"><h2>Entscheidungspunkte <span class="count" id="decisionCount"></span></h2><button class="secondary" onclick="openDecisionCreate()">＋ Entscheidungspunkt hinzufügen</button></div>
           <p class="hint">Offene Entscheidungen, die vor Umsetzung klar dokumentiert werden müssen.</p>
           <div class="decision-list" id="decisionList"></div>
         </section>
 
-        <section class="panel section">
+        <section class="panel section" data-view="detail">
           <button class="documentation-toggle" onclick="toggleDocumentation()">
             <span style="font-size:18px;letter-spacing:-.03em;color:var(--text)">Dokumentation</span>
             <span id="documentationToggleLabel">Aufklappen ↓</span>
@@ -281,7 +282,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/core.js?v=readyness-improvements"></script>
-<script src="js/app.js?v=readyness-improvements"></script>
+<script src="js/core.js?v=readyness-views"></script>
+<script src="js/app.js?v=readyness-views"></script>
 </body>
 </html>
