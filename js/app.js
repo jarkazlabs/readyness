@@ -42,6 +42,22 @@ function initials(n){return(n||"?").split(" ").map(p=>p[0]).join("").slice(0,2).
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}
 function currentUser(){return "Sascha Boss"}
+function enterApp(){
+  document.body.classList.add("app-mode");
+  history.replaceState(null,"","#app");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function showLanding(){
+  closeInputModal();
+  closeDecisionModal();
+  closeSidebar();
+  closeRequestModal();
+  closeAdminModal();
+  closeDeleteModal();
+  document.body.classList.remove("app-mode");
+  history.replaceState(null,"",location.pathname);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function timeNow(){return new Date().toLocaleString("de-DE",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}
 function historyEntry(user,action,object,context=""){return {user,action,object,time:timeNow(),context}}
 function addHistory(action,object,context="",user=currentUser()){current().log.push(historyEntry(user,action,object,context))}
@@ -52,11 +68,11 @@ function formatHistoryEntry(entry){
 }
 
 function ringColor(s){
-  if(s>=100) return "#16a34a";
-  if(s<25) return "#d92d20";
-  if(s<50) return "#f97316";
-  if(s<75) return "#f59e0b";
-  return "#22c55e";
+  if(s>=100) return "#34a86f";
+  if(s<25) return "#c02f66";
+  if(s<50) return "#f58220";
+  if(s<75) return "#b34964";
+  return "#7f529c";
 }
 
 function hasValidInputComment(i){
@@ -72,10 +88,65 @@ function commentsHtml(list){
   return (list||[]).map(c=>`<div class="comment">${esc(c)}</div>`).join("") || `<div class="empty-comments"><div><strong>Noch keine Kommentare.</strong><div class="small">Sobald ein Kommentar vorhanden ist, wird er hier angezeigt.</div></div></div>`;
 }
 
-function readinessText(r){const mi=r.inputs.filter(i=>!i.done).length, od=r.decisions.filter(d=>!d.decided).length;if(mi===0&&od===0)return"Alle bekannten Inputs und Entscheidungen sind geklärt. Das Vorhaben ist bereit.";return`Es fehlen noch ${mi} Input(s) und ${od} Entscheidungspunkt(e), bis das Vorhaben bereit ist.`}
-function nextStep(r){const step=nextStepItem(r);if(!step)return"Alles Wesentliche ist geklärt";return step.type==="input"?`${step.item.name} mit ${step.item.owner} klären`:`${step.item.question} dokumentieren`}
+function missingCounts(r){
+  const openInputs=(r.inputs||[]).filter(i=>!i.done).length;
+  const openDecisions=(r.decisions||[]).filter(d=>!d.decided).length;
+  const total=(r.inputs||[]).length+(r.decisions||[]).length;
+  const completed=total-openInputs-openDecisions;
+  return {openInputs,openDecisions,total,completed};
+}
+function readinessText(r){
+  const m=missingCounts(r);
+  if(!m.total)return"Dieses Vorhaben braucht zuerst Inputs oder Entscheidungspunkte, damit Readyness berechnet werden kann.";
+  if(m.openInputs===0&&m.openDecisions===0)return"Alle bekannten Inputs und Entscheidungen sind geklärt. Das Vorhaben ist bereit.";
+  return `${m.completed} von ${m.total} Klärungspunkten sind abgeschlossen. Offen sind noch ${m.openInputs} Input(s) und ${m.openDecisions} Entscheidungspunkt(e).`;
+}
+function nextStepLabel(step){
+  if(!step)return"Alles Wesentliche ist geklärt";
+  return step.type==="input"?`${step.item.name} mit ${step.item.owner} klären`:`${step.item.question} dokumentieren`;
+}
+function nextStepReason(step){
+  if(!step)return"Readyness ist erreicht. Neue Punkte sollten nur ergänzt werden, wenn sich der organisatorische Rahmen ändert.";
+  if(step.marked)return"Dieser Punkt wurde bewusst als nächste Klärung markiert und hat deshalb Vorrang.";
+  return step.type==="input"?"Der erste offene Input blockiert die nächste belastbare Einschätzung.":"Die erste offene Entscheidung verhindert, dass das Vorhaben als bereit gilt.";
+}
+function statusLabel(r){
+  const s=score(r);
+  return s===100?"Bereit":s>=75?"Fast bereit":s>0?"In Klärung":"Nicht bereit";
+}
 
-function render(){const r=current();renderRequestList();$("requestId").textContent=r.id;$("title").textContent=r.title;$("description").textContent=r.description;$("createdBy").textContent=r.createdBy;$("createdAt").textContent=r.createdAt;$("responsible").textContent=r.responsible;$("targetDepartment").textContent=r.targetDepartment;$("deadline").textContent=fmtDate(r.deadline);let s=score(r);$("score").textContent=s+"%";$("ring").style.setProperty("--score",s+"%");$("ring").style.setProperty("--ring-color",ringColor(s));$("ring").classList.toggle("rainbow",s===100);$("readyState").textContent=s===100?"Bereit":s>=75?"Fast bereit":s>0?"In Klärung":"Nicht bereit";$("readyText").textContent=readinessText(r);$("nextStep").textContent=nextStep(r);$("inputCount").textContent=r.inputs.length;$("decisionCount").textContent=r.decisions.length;renderInputs(r);renderDecisions(r);renderTimeline(r);renderAside(r);save()}
+function render(){
+  const r=current();
+  const s=score(r);
+  const m=missingCounts(r);
+  const step=nextStepItem(r);
+  renderOverview();
+  renderRequestList();
+  $("requestId").textContent=r.id;
+  $("title").textContent=r.title;
+  $("description").textContent=r.description;
+  $("createdBy").textContent=r.createdBy;
+  $("createdAt").textContent=r.createdAt;
+  $("responsible").textContent=r.responsible;
+  $("targetDepartment").textContent=r.targetDepartment;
+  $("deadline").textContent=fmtDate(r.deadline);
+  $("score").textContent=s+"%";
+  $("ring").style.setProperty("--score",s+"%");
+  $("ring").style.setProperty("--ring-color",ringColor(s));
+  $("ring").classList.toggle("rainbow",s===100);
+  $("readyState").textContent=statusLabel(r);
+  $("readyText").textContent=readinessText(r);
+  $("readinessFacts").innerHTML=`<span>${m.openInputs} offene Inputs</span><span>${m.openDecisions} offene Entscheidungen</span><span>${m.completed}/${m.total||0} geklärt</span>`;
+  $("nextStep").textContent=nextStepLabel(step);
+  $("nextStepReason").textContent=nextStepReason(step);
+  $("inputCount").textContent=r.inputs.length;
+  $("decisionCount").textContent=r.decisions.length;
+  renderInputs(r);
+  renderDecisions(r);
+  renderTimeline(r);
+  renderAside(r);
+  save()
+}
 function requestStatusClass(s){
   if(s>=100) return "status-ready";
   if(s>=75) return "status-high";
@@ -88,9 +159,42 @@ function requestBadgeClass(s){
   if(s>=35) return "amber";
   return "red";
 }
+function renderOverview(){
+  const requests=state.requests||[];
+  const active=current();
+  const ready=requests.filter(r=>score(r)===100).length;
+  const openInputs=requests.reduce((sum,r)=>sum+missingCounts(r).openInputs,0);
+  const openDecisions=requests.reduce((sum,r)=>sum+missingCounts(r).openDecisions,0);
+  const focus=nextStepItem(active);
+  $("overviewGrid").innerHTML=`
+    <article class="overview-card">
+      <span>Aktive Vorhaben</span>
+      <strong>${requests.length}</strong>
+      <p>${ready} davon sind bereit. ${requests.length-ready} brauchen noch Klärung.</p>
+    </article>
+    <article class="overview-card">
+      <span>Offene Klärungspunkte</span>
+      <strong>${openInputs+openDecisions}</strong>
+      <p>${openInputs} Inputs und ${openDecisions} Entscheidungen sind über alle Vorhaben offen.</p>
+    </article>
+    <article class="overview-card focus">
+      <span>Nächster sinnvoller Schritt</span>
+      <strong>${esc(nextStepLabel(focus))}</strong>
+      <p>${esc(nextStepReason(focus))}</p>
+      <button class="secondary" onclick="completeNextStep()">Jetzt klären</button>
+    </article>`;
+}
 function renderRequestList(){$("requestList").innerHTML=state.requests.map(r=>{const s=score(r);return `<button class="request-item ${requestStatusClass(s)} ${r.id===currentId?"active":""}" onclick="selectRequest('${r.id}')"><div class="request-title"><span class="txt">${esc(r.title)}</span><span class="badge ${requestBadgeClass(s)}">${s}%</span></div><div class="request-meta txt">${esc(r.targetDepartment)} · ${fmtDate(r.deadline)}</div></button>`}).join("")}
-function renderInputs(r){$("inputsTable").innerHTML=`<div class="row header"><div>Input</div><div>Status</div><div>Verantwortlich</div><div>Bereich</div><div></div></div>${r.inputs.map((i,idx)=>`<div class="row click ${i.done?"is-done":""} ${i.next&&!i.done?"is-next":""}" onclick="openInputDetail(${idx})"><div class="name">${i.next&&!i.done?`<span class="next-marker">Als Nächstes</span>`:""}${esc(i.name)}<span class="small">${esc(i.desc)}</span></div><div><div class="checkbox-label"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Erledigt":"Offen"}</span></div></div><div class="person"><div class="avatar">${initials(i.owner)}</div><div><strong>${esc(i.owner)}</strong></div></div><div class="small">${esc(i.dept)}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('input',${idx})">⋮</button><div class="action-menu" id="input-menu-${idx}"><button onclick="openInputDetail(${idx})">Bearbeiten</button>${i.done?"":`<button onclick="setNextItem('input',${idx})">${i.next?"Markierung entfernen":"Als Nächstes markieren"}</button>`}<button class="danger" onclick="askDeleteInput(${idx})">Löschen</button></div></div></div>`).join("")}`}
-function renderDecisions(r){$("decisionList").innerHTML=r.decisions.map((d,idx)=>`<article class="decision ${d.decided?"is-done":""} ${d.next&&!d.decided?"is-next":""}" onclick="openDecisionDetail(${idx})"><div><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span></div><div>${d.next&&!d.decided?`<span class="next-marker">Als Nächstes</span>`:""}<h3>${esc(d.question)}</h3><p>${esc(d.reason)}</p></div><div class="person"><div class="avatar">${initials(d.owner)}</div><div><strong>${esc(d.owner)}</strong></div></div><div><span class="badge ${d.decided?"green":"red"}">${d.decided?"Entschieden":"Offen"}</span></div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('decision',${idx})">⋮</button><div class="action-menu" id="decision-menu-${idx}"><button onclick="openDecisionDetail(${idx})">Bearbeiten</button>${d.decided?"":`<button onclick="setNextItem('decision',${idx})">${d.next?"Markierung entfernen":"Als Nächstes markieren"}</button>`}<button class="danger" onclick="askDeleteDecision(${idx})">Löschen</button></div></div></article>`).join("")||`<p class="hint">Noch keine Entscheidungspunkte vorhanden.</p>`}
+function emptyState(kind){
+  const isInput=kind==="input";
+  return `<div class="empty-state"><strong>${isInput?"Noch keine Inputs definiert.":"Noch keine Entscheidungen definiert."}</strong><p>${isInput?"Starte mit den Informationen, die vor Umsetzung wirklich fehlen.":"Halte offene Richtungsfragen fest, bevor sie später implizit entschieden werden."}</p><button class="secondary" onclick="${isInput?"openInputCreate()":"openDecisionCreate()"}">${isInput?"＋ Input hinzufügen":"＋ Entscheidungspunkt hinzufügen"}</button></div>`;
+}
+function renderInputs(r){
+  $("inputsTable").innerHTML=`<div class="row header clarity-row"><div>Klärungspunkt</div><div>Status</div><div>Verantwortlich</div><div>Bereich</div><div></div></div>${r.inputs.length?r.inputs.map((i,idx)=>`<div class="row click clarity-row ${i.done?"is-done":""} ${i.next&&!i.done?"is-next":""}" onclick="openInputDetail(${idx})"><div class="name">${i.next&&!i.done?`<span class="next-marker">Als Nächstes</span>`:""}${esc(i.name)}<span class="small">${esc(i.desc)}</span></div><div><div class="checkbox-label"><span class="fancy-check ${i.done?"done":"open"}">${i.done?"✓":""}</span><span>${i.done?"Geklärt":"Offen"}</span></div></div><div class="person"><div class="avatar">${initials(i.owner)}</div><div><strong>${esc(i.owner)}</strong><div class="small">${esc(userRole(i.owner))}</div></div></div><div class="small">${esc(i.dept)}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('input',${idx})">⋮</button><div class="action-menu" id="input-menu-${idx}"><button onclick="openInputDetail(${idx})">Bearbeiten</button>${i.done?"":`<button onclick="setNextItem('input',${idx})">${i.next?"Markierung entfernen":"Als Nächstes markieren"}</button>`}<button class="danger" onclick="askDeleteInput(${idx})">Löschen</button></div></div></div>`).join(""):emptyState("input")}`;
+}
+function renderDecisions(r){
+  $("decisionList").innerHTML=`<div class="row header clarity-row decision-row"><div>Klärungspunkt</div><div>Status</div><div>Verantwortlich</div><div>Ergebnis</div><div></div></div>${r.decisions.length?r.decisions.map((d,idx)=>`<div class="row click clarity-row decision-row ${d.decided?"is-done":""} ${d.next&&!d.decided?"is-next":""}" onclick="openDecisionDetail(${idx})"><div class="name">${d.next&&!d.decided?`<span class="next-marker">Als Nächstes</span>`:""}${esc(d.question)}<span class="small">${esc(d.reason)}</span></div><div><div class="checkbox-label"><span class="decision-check ${d.decided?"done":"open"}">${d.decided?"✓":""}</span><span>${d.decided?"Geklärt":"Offen"}</span></div></div><div class="person"><div class="avatar">${initials(d.owner)}</div><div><strong>${esc(d.owner)}</strong><div class="small">${esc(userRole(d.owner))}</div></div></div><div><span class="badge ${d.decided?"green":"red"}">${d.decided?"Dokumentiert":"Offen"}</span></div><div class="row-actions" onclick="event.stopPropagation()"><button class="kebab" onclick="toggleActionMenu('decision',${idx})">⋮</button><div class="action-menu" id="decision-menu-${idx}"><button onclick="openDecisionDetail(${idx})">Bearbeiten</button>${d.decided?"":`<button onclick="setNextItem('decision',${idx})">${d.next?"Markierung entfernen":"Als Nächstes markieren"}</button>`}<button class="danger" onclick="askDeleteDecision(${idx})">Löschen</button></div></div></div>`).join(""):emptyState("decision")}`;
+}
 function renderTimeline(r){
   $("timeline").innerHTML=r.log.slice().reverse().map((entry,idx)=>{
     const h=formatHistoryEntry(entry);
@@ -544,6 +648,10 @@ function toggleDocumentation(){
   body.classList.toggle("open");
   label.textContent=body.classList.contains("open")?"Zuklappen ↑":"Aufklappen ↓";
 }
+function showOverview(){
+  $("overviewPanel")?.scrollIntoView({behavior:"smooth",block:"start"});
+  toast("Übersicht zeigt jetzt die wichtigsten Klärungspunkte.");
+}
 function showDemoArea(area){toast(`${area} wird in der nächsten Ausbaustufe zur eigenen Übersicht.`)}
 function openAdminModal(){
   $("adminDepartments").innerHTML=departments.map(d=>`<div class="admin-list-item"><strong>${esc(d)}</strong><span>${state.requests.filter(r=>r.targetDepartment===d).length} Vorhaben</span></div>`).join("");
@@ -568,3 +676,4 @@ document.addEventListener("click",(event)=>{
 window.addEventListener("resize",closeInputConfirm);
 
 load();render();
+if(location.hash==="#app") document.body.classList.add("app-mode");
